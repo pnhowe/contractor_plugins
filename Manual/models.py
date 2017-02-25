@@ -6,12 +6,8 @@ cinp = CInP( 'Manual', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'manualfoundation' )
 
-@cinp.model( property_list=( 'state', 'type' ) )
+@cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class ManualFoundation( Foundation ):
-  @property
-  def manager( self ):
-    return ( None, None )
-
   @property
   def type( self ):
     return 'Manual'
@@ -19,10 +15,6 @@ class ManualFoundation( Foundation ):
   @property
   def class_list( self ):
     return [ 'Metal', 'Manual' ]
-
-  @property
-  def can_auto_locate( self ):
-    return False
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
@@ -33,7 +25,6 @@ class ManualFoundation( Foundation ):
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
     return True
-
 
   def __str__( self ):
     return 'ManualFoundation {0}'.format( self.pk )

@@ -24,7 +24,8 @@ def load_foundation_blueprints( app, schema_editor ):
 
   s = Script( name='create-generic-manual', description='Create Manual Server' )
   s.script = """# Test and Configure Generic Manual Server
-waitfor poweroff()
+pause( msg='Resume when Server is Powered Off' )
+pause( msg='Power On Server and Resume' )
   """
   s.full_clean()
   s.save()
@@ -32,7 +33,7 @@ waitfor poweroff()
 
   s = Script( name='destroy-generic-manual', description='Destroy Manual Server' )
   s.script = """# Decommission Generic Manual Server
-ipmi.poweroff()
+pause( msg='Resume script when Server is Off' )
   """
   s.full_clean()
   s.save()

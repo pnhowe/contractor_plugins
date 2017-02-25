@@ -8,7 +8,7 @@ cinp = CInP( 'VirtualBox', '0.1' )
 FOUNDATION_SUBCLASS_LIST.append( 'virtualboxfoundation' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 
-@cinp.model( property_list=( 'state', 'type' ) )
+@cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
   @property
   def manager( self ):
