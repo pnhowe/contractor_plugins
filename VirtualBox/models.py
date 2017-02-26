@@ -11,8 +11,12 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
   @property
+  def subclass( self ):
+    return self
+
+  @property
   def manager( self ):
-    return ( None, None )
+    return ( 'virtualbox', self.locator )
 
   @property
   def type( self ):

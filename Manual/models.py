@@ -9,6 +9,14 @@ FOUNDATION_SUBCLASS_LIST.append( 'manualfoundation' )
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class ManualFoundation( Foundation ):
   @property
+  def subclass( self ):
+    return self
+
+  @property
+  def manager( self ):
+    return ( 'manual', self.locator )
+
+  @property
   def type( self ):
     return 'Manual'
 

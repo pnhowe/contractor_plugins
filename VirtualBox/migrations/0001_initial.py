@@ -24,7 +24,9 @@ def load_foundation_blueprints( app, schema_editor ):
 
   s = Script( name='create-generic-virtualbox', description='Create Manual Server' )
   s.script = """# Create Generic VirualBox VM
-virtualbox.create()
+begin( description="VM Creation" )
+  virtualbox.create()
+end
   """
   s.full_clean()
   s.save()

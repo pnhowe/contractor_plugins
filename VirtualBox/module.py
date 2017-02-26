@@ -1,28 +1,25 @@
 from contractor.tscript.runner import Runner, ExternalFunction, ExecutionError, UnrecoverableError, ParamaterError
 
 class create( ExternalFunction ):
-  contractor_module = 'virtualbox'
-  contractor_function = 'create'
-
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.done = None
 
   @property
   def ready( self ):
-    if self.done is None:
-      return 'Not Initilized'
-
-    return self.done
-
-  @property
-  def value( self ):
     if self.done is True:
-      return 'VM Created'
+      return True
     else:
       return 'Waiting for VM Creation'
 
-  def from_contractor( self, data ):
+  @property
+  def value( self ):
+    return None
+
+  def to_subcontractor( self ):
+    return { 'disk_list': [ 10 ], 'interface_list': [ 'eth0' ] }
+
+  def from_subcontractor( self, data ):
     self.done = True
     return True
 
@@ -34,9 +31,6 @@ class create( ExternalFunction ):
 
 
 class destroy( ExternalFunction ):
-  contractor_module = 'virtualbox'
-  contractor_function = 'create'
-
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.done = None
@@ -55,7 +49,10 @@ class destroy( ExternalFunction ):
     else:
       return 'Waiting for VM Destruction'
 
-  def from_contractor( self, data ):
+  def to_subcontractor( self ):
+    return True
+
+  def from_subcontractor( self, data ):
     self.done = True
     return True
 
