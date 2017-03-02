@@ -16,12 +16,11 @@ class ping( ExternalFunction ):
   def value( self ):
     return None
 
-  def to_subcontractor( self ):
-    return { 'ip': '127.0.0.1' }
+  def toSubcontractor( self ):
+    return ( 'ping', { 'ip': '127.0.0.1' } )
 
-  def from_subcontractor( self, data ):
+  def fromSubcontractor( self, data ):
     self.done = True
-    return True
 
   def __getstate__( self ):
     return ( self.done, )

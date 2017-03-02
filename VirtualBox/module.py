@@ -3,7 +3,8 @@ from contractor.tscript.runner import Runner, ExternalFunction, ExecutionError, 
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.done = None
+    self.done = False
+    self.created = None
 
   @property
   def ready( self ):
@@ -14,20 +15,21 @@ class create( ExternalFunction ):
 
   @property
   def value( self ):
-    return None
+    return self.created
 
-  def to_subcontractor( self ):
-    return { 'disk_list': [ 10 ], 'interface_list': [ 'eth0' ] }
+  def toSubcontractor( self ):
+    return ( 'create', { 'disk_list': [ 10 ], 'interface_list': [ 'eth0' ] } )
 
-  def from_subcontractor( self, data ):
+  def fromSubcontractor( self, data ):
     self.done = True
-    return True
+    self.created = data
 
   def __getstate__( self ):
-    return ( self.done, )
+    return ( self.done, self.created )
 
   def __setstate__( self, state ):
     self.done = state[0]
+    self.created = state[1]
 
 
 class destroy( ExternalFunction ):
@@ -37,24 +39,20 @@ class destroy( ExternalFunction ):
 
   @property
   def ready( self ):
-    if self.done is None:
-      return 'Not Initilized'
-
-    return self.done
-
-  @property
-  def value( self ):
     if self.done is True:
-      return 'VM Destroyed'
+      return True
     else:
       return 'Waiting for VM Destruction'
 
-  def to_subcontractor( self ):
-    return True
+  @property
+  def value( self ):
+    return
 
-  def from_subcontractor( self, data ):
+  def toSubcontractor( self ):
+    return ( 'destroy', None )
+
+  def fromSubcontractor( self, data ):
     self.done = True
-    return True
 
   def __getstate__( self ):
     return ( self.done, )
