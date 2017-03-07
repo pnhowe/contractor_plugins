@@ -13,10 +13,6 @@ class ManualFoundation( Foundation ):
     return self
 
   @property
-  def manager( self ):
-    return ( 'manual', self.locator )
-
-  @property
   def type( self ):
     return 'Manual'
 
