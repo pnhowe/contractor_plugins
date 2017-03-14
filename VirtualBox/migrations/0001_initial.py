@@ -11,7 +11,7 @@ def load_foundation_blueprints( app, schema_editor ):
   BluePrintScript = app.get_model( 'BluePrint', 'BluePrintScript' )
 
   fbp = FoundationBluePrint( name='generic-virtualbox', description='Generic VirtualBox VM' )
-  fbp.config_values = {}
+  fbp.config_values = { 'memory_size': 512, 'cpu_count': 1 }
   fbp.template = {}
   fbp.foundation_type_list = [ 'VirtualBox' ]
   fbp.physical_interface_names = [ 'eth0' ]
@@ -25,7 +25,8 @@ def load_foundation_blueprints( app, schema_editor ):
   s = Script( name='create-generic-virtualbox', description='Create Manual Server' )
   s.script = """# Create Generic VirualBox VM
 begin( description="VM Creation" )
-  virtualbox.create()
+  uuid = virtualbox.create( name=foundation.locator, memory_size=config.memory_size, cpu_count=config.cpu_count )
+  foundation.virtualbox_uuid = uuid
 end
   """
   s.full_clean()
@@ -34,7 +35,11 @@ end
 
   s = Script( name='destroy-generic-virtualbox', description='Destroy Manual Server' )
   s.script = """# Destory Generic VirualBox VM
-virtualbox.destroy()
+begin( description="VM Destruction" )
+  foundation.power_off()
+  foundation.destroy()
+  foundation.virtualbox_uuid = None
+end
   """
   s.full_clean()
   s.save()
@@ -51,7 +56,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='VirtualBoxFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(auto_created=True, serialize=False, parent_link=True, to='Building.Foundation', primary_key=True)),
+                ('foundation_ptr', models.OneToOneField(parent_link=True, to='Building.Foundation', serialize=False, primary_key=True, auto_created=True)),
+                ('virtualbox_uuid', models.CharField(blank=True, max_length=36, null=True)),
             ],
             bases=('Building.foundation',),
         ),
