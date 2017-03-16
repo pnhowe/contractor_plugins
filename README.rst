@@ -65,3 +65,8 @@ VirtualBox (Foundation)
 This foundation type is for creating vms in VirtualBox (by Oracle).  The python
 virtual box bindings will need to be installed (for ubuntu/debian the bindings
 are included in the virtualbox package)
+
+IpUtils
+-------
+
+Utilities for various IP related tasks, suchas iputils.wait_for_port and iputils.ping

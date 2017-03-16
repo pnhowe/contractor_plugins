@@ -1,8 +1,9 @@
 import re
-from contractor.tscript.runner import Runner, ExternalFunction, ExecutionError, UnrecoverableError, ParamaterError, Pause
+from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
 
 NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
+
 
 # exported functions
 class create( ExternalFunction ):
@@ -15,8 +16,8 @@ class create( ExternalFunction ):
     self.vm_paramaters = {
                            'name': None,
                            'cpu_count': 1,
-                           'memory_size': 1024, # in Meg
-                           'disk_list': [ { 'name': 'sda', 'size': 5 }, { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } ], # disk size in G
+                           'memory_size': 1024,  # in Meg
+                           'disk_list': [ { 'name': 'sda', 'size': 5 }, { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } ],  # disk size in G
                            'interface_list': [ 'eth0' ]
                          }
 
@@ -63,7 +64,7 @@ class create( ExternalFunction ):
     else:
       return ( 'create', self.vm_paramaters )
 
-  def fromSubcontractor( self, data ): # TODO: really if these are missing or false, there is a problem
+  def fromSubcontractor( self, data ):  # TODO: really if these are missing or false, there is a problem
     if self.in_rollback:
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
@@ -71,7 +72,7 @@ class create( ExternalFunction ):
       self.uuid = data.get( 'uuid', None )
 
   def rollback( self ):
-    self.in_rollback =  True
+    self.in_rollback = True
 
   def __getstate__( self ):
     return ( self.done, self.in_rollback, self.uuid, self.vm_paramaters )
@@ -113,7 +114,7 @@ class destroy( ExternalFunction ):
     self.name = state[2]
 
 
-class set_power( ExternalFunction ): #TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
+class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
   def __init__( self, uuid, state, name, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.uuid = uuid
@@ -139,7 +140,7 @@ class set_power( ExternalFunction ): #TODO: need a delay after each power comman
 
   def toSubcontractor( self ):
     self.counter += 1
-    if self.desired_state == 'off' and self.counter < 3: # the first two times, do it nicely, after that, the hard way
+    if self.desired_state == 'off' and self.counter < 3:  # the first two times, do it nicely, after that, the hard way
       return ( 'set_power', { 'state': 'soft_off', 'uuid': self.uuid, 'name': self.name } )
     else:
       return ( 'set_power', { 'state': self.desired_state, 'uuid': self.uuid, 'name': self.name } )
@@ -190,7 +191,37 @@ class power_state( ExternalFunction ):
     self.state = state[1]
     self.name = state[2]
 
-## plugin exports
+
+class wait_for_poweroff( ExternalFunction ):
+  def __init__( self, uuid, name, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.uuid = uuid
+    self.name = name
+    self.current_state = None
+
+  @property
+  def ready( self ):
+    if self.current_state == 'off':
+      return True
+    else:
+      return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
+
+  def toSubcontractor( self ):
+    return ( 'power_state', { 'uuid': self.uuid, 'name': self.name } )
+
+  def fromSubcontractor( self, data ):
+    self.current_State = data[ 'state' ]
+
+  def __getstate__( self ):
+    return ( self.uuid, self.current_state, self.name )
+
+  def __setstate__( self, state ):
+    self.uuid = state[0]
+    self.current_state = state[1]
+    self.name = state[2]
+
+
+# plugin exports
 
 TSCRIPT_NAME = 'virtualbox'
 
