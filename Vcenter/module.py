@@ -23,9 +23,6 @@ class create( ExternalFunction ):
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
 
-    if False:  # boot from iso instead
-      self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
-      self.vm_paramaters[ 'boot_order' ][0] = 'cd'
 
   @property
   def ready( self ):
@@ -229,7 +226,7 @@ class wait_for_poweroff( ExternalFunction ):
 
 # plugin exports
 
-TSCRIPT_NAME = 'virtualbox'
+TSCRIPT_NAME = 'vcenter'
 
 TSCRIPT_FUNCTIONS = {
                       'create': create,
