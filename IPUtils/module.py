@@ -1,4 +1,5 @@
-from contractor.tscript.runner import Runner, ExternalFunction, ExecutionError, UnrecoverableError, ParamaterError
+from contractor.tscript.runner import ExternalFunction, ParamaterError
+
 
 class ping( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
@@ -82,7 +83,7 @@ class waitForPort( ExternalFunction ):
     self.curent_state = state[2]
 
 
-## plugin exports
+# plugin exports
 
 TSCRIPT_NAME = 'iputils'
 
