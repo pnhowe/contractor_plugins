@@ -25,8 +25,9 @@ def load_foundation_blueprints( app, schema_editor ):
   s = Script( name='create-generic-virtualbox', description='Create Manual Server' )
   s.script = """# Create Generic VirualBox VM
 begin( description="VM Creation" )
-  uuid = virtualbox.create( name=foundation.locator, memory_size=config.memory_size, cpu_count=config.cpu_count )
-  foundation.virtualbox_uuid = uuid
+  vm = virtualbox.create( name=foundation.locator, memory_size=config.memory_size, cpu_count=config.cpu_count )
+  foundation.virtualbox_uuid = vm[ 'uuid' ]
+  foundation.set_interface_macs( interface_list=vm[ 'interface_list' ] )
 end
   """
   s.full_clean()

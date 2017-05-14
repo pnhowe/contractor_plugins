@@ -17,6 +17,10 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 class VirtualBoxFoundation( Foundation ):
   virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
 
+  def setInterfaceMacs( self, interface_list ):
+    for interface in interface_list:
+      print( '*_____***** {0} ****______________*'.format( interface ) )
+
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VirtualBoxFoundation, VirtualBoxFoundation ).getTscriptValues( write_mode )
@@ -36,6 +40,8 @@ class VirtualBoxFoundation( Foundation ):
     result[ 'power_state' ] = lambda foundation: ( 'virtualbox', power_state( foundation.virtualbox_uuid, foundation.locator ) )
     result[ 'wait_for_poweroff' ] = lambda foundation: ( 'virtualbox', wait_for_poweroff( foundation.virtualbox_uuid, foundation.locator ) )
     result[ 'destroy' ] = lambda foundation: ( 'virtualbox', destroy( foundation.virtualbox_uuid, foundation.locator ) )
+    result[ 'set_interface_macs' ] = VirtualBoxFoundation.setInterfaceMacs
+    ADSFadsfadsf ^ this isn't right
 
     return result
 

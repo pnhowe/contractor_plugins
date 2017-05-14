@@ -11,6 +11,7 @@ class create( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.done = False
     self.uuid = None
+    self.interface_list = []
     self.in_rollback = False
 
     subcontractor_id = 1
@@ -40,7 +41,7 @@ class create( ExternalFunction ):
 
   @property
   def value( self ):
-    return self.uuid
+    return { 'uuid': self.uuid, 'interface_list': self.interface_list }
 
   def setup( self, parms ):
     try:
@@ -77,18 +78,20 @@ class create( ExternalFunction ):
     else:
       self.done = data.get( 'done', False )
       self.uuid = data.get( 'uuid', None )
+      self.interface_list = data.get( 'interface_list', [] )
 
   def rollback( self ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.done, self.in_rollback, self.uuid, self.vm_paramaters )
+    return ( self.done, self.in_rollback, self.uuid, self.interface_list, self.vm_paramaters )
 
   def __setstate__( self, state ):
     self.done = state[0]
     self.in_rollback = state[1]
     self.uuid = state[2]
-    self.vm_paramaters = state[3]
+    self.interface_list = state[3]
+    self.vm_paramaters = state[4]
 
 
 # other functions used by the virtualbox foundation
