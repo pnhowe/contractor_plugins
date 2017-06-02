@@ -5,7 +5,7 @@ from cinp.orm_django import DjangoCInP as CInP
 from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
-from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy
+from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, set_interface_macs
 
 cinp = CInP( 'VirtualBox', '0.1' )
 
@@ -16,10 +16,6 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
   virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
-
-  def setInterfaceMacs( self, interface_list ):
-    for interface in interface_list:
-      print( '*_____***** {0} ****______________*'.format( interface ) )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
@@ -40,8 +36,7 @@ class VirtualBoxFoundation( Foundation ):
     result[ 'power_state' ] = lambda foundation: ( 'virtualbox', power_state( foundation.virtualbox_uuid, foundation.locator ) )
     result[ 'wait_for_poweroff' ] = lambda foundation: ( 'virtualbox', wait_for_poweroff( foundation.virtualbox_uuid, foundation.locator ) )
     result[ 'destroy' ] = lambda foundation: ( 'virtualbox', destroy( foundation.virtualbox_uuid, foundation.locator ) )
-    result[ 'set_interface_macs' ] = VirtualBoxFoundation.setInterfaceMacs
-    ADSFadsfadsf ^ this isn't right
+    result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
 
     return result
 

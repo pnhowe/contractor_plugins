@@ -1,4 +1,7 @@
 import re
+
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+
 from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
 
 NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
@@ -60,7 +63,7 @@ class create( ExternalFunction ):
       raise ParamaterError( 'memory_size', 'must be an integer' )
 
     if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
+      raise ParamaterError( 'name', 'invalid name' )
     if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
       raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
     if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:
@@ -230,6 +233,27 @@ class wait_for_poweroff( ExternalFunction ):
     self.current_state = state[1]
     self.name = state[2]
 
+
+class set_interface_macs():
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.foundation = foundation
+
+  def __call__( self, interface_list ):
+    for interface in interface_list:
+      try:
+        iface = self.foundation.interfaces.get( name=interface[ 'name' ] )
+      except ObjectDoesNotExist:
+        raise ParamaterError( 'interface_list', 'interface named "{0}" not found'.format( interface[ 'name' ] ) )
+
+      iface.mac = interface[ 'mac' ]
+
+      try:
+        iface.full_clean()
+      except ValidationError as e:
+        raise ParamaterError( 'interface_list', 'Error saving interface "{0}": {1}'.format( interface[ 'name' ], e ) )
+
+      iface.save()
 
 # plugin exports
 
