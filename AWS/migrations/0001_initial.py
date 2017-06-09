@@ -10,32 +10,32 @@ def load_foundation_blueprints( app, schema_editor ):
   Script = app.get_model( 'BluePrint', 'Script' )
   BluePrintScript = app.get_model( 'BluePrint', 'BluePrintScript' )
 
-  fbp = FoundationBluePrint( name='generic-virtualbox', description='Generic VirtualBox VM' )
-  fbp.config_values = { 'memory_size': 512, 'cpu_count': 1 }
+  fbp = FoundationBluePrint( name='generic-awsec2', description='Generic VirtualBox VM' )
+  fbp.config_values = {}
   fbp.template = {}
-  fbp.foundation_type_list = [ 'VirtualBox' ]
+  fbp.foundation_type_list = [ 'AWSEC2' ]
   fbp.physical_interface_names = [ 'eth0' ]
   fbp.full_clean()
   fbp.save()
 
-  s = Script( name='create-generic-virtualbox', description='Create Virtual Box VM' )
-  s.script = """# Create Generic VirualBox VM
-begin( description="VM Creation" )
-  vm = virtualbox.create()
-  foundation.virtualbox_uuid = vm[ 'uuid' ]
-  foundation.set_interface_macs( interface_list=vm[ 'interface_list' ] )
+  s = Script( name='create-generic-awsec2', description='Create AWS EC2 Instance' )
+  s.script = """# Create Generic AWS EC2 Instance
+begin( description="Instance Creation" )
+  instance = aws.create()
+  foundation.awsec2_uuid = instance[ 'uuid' ]
+  foundation.set_interface_macs( interface_list=instance[ 'interface_list' ] )
 end
   """
   s.full_clean()
   s.save()
   BluePrintScript( blueprint=fbp, script=s, name='create' ).save()
 
-  s = Script( name='destroy-generic-virtualbox', description='Destroy Virtual Box VM' )
-  s.script = """# Destory Generic VirualBox VM
-begin( description="VM Destruction" )
+  s = Script( name='destroy-generic-awsec2', description='Destroy AWS EC2 Instance' )
+  s.script = """# Destory Generic AWS EC2 Instance
+begin( description="Instance Destruction" )
   foundation.power_off()
   foundation.destroy()
-  foundation.virtualbox_uuid = None
+  foundation.awsec2_uuid = None
 end
   """
   s.full_clean()
@@ -55,10 +55,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='VirtualBoxFoundation',
+            name='AWSEC2Foundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(parent_link=True, to='Building.Foundation', serialize=False, primary_key=True, auto_created=True)),
-                ('virtualbox_uuid', models.CharField(blank=True, max_length=36, null=True)),
+                ('foundation_ptr', models.OneToOneField(auto_created=True, primary_key=True, parent_link=True, serialize=False, to='Building.Foundation')),
+                ('awsec2_uuid', models.CharField(max_length=36, blank=True, null=True)),
             ],
             bases=('Building.foundation',),
         ),
