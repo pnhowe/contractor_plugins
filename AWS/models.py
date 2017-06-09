@@ -5,36 +5,35 @@ from cinp.orm_django import DjangoCInP as CInP
 from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
-from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, set_interface_macs
+from contractor_plugins.AWS.module import set_power, power_state, destroy, set_interface_macs
 
-cinp = CInP( 'VirtualBox', '0.1' )
+cinp = CInP( 'AWS', '0.1' )
 
-FOUNDATION_SUBCLASS_LIST.append( 'virtualboxfoundation' )
-RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
+FOUNDATION_SUBCLASS_LIST.append( 'awsoundation' )
+RUNNER_MODULE_LIST.append( 'contractor_plugins.AWS.module' )
 
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
-class VirtualBoxFoundation( Foundation ):
-  virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
+class AWSEC2Foundation( Foundation ):
+  awsec2_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be multiple AWS accounts
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
-    result = super( VirtualBoxFoundation, VirtualBoxFoundation ).getTscriptValues( write_mode )
+    result = super( AWSEC2Foundation, AWSEC2Foundation ).getTscriptValues( write_mode )
 
-    result[ 'virtualbox_uuid' ] = ( lambda foundation: foundation.virtualbox_uuid, None )
+    result[ 'awsec2_uuid' ] = ( lambda foundation: foundation.awsec2_uuid, None )
 
     if write_mode is True:
-      result[ 'virtualbox_uuid' ] = ( result[ 'virtualbox_uuid' ][0], lambda foundation, val: setattr( foundation, 'virtualbox_uuid', val ) )
+      result[ 'awsec2_uuid' ] = ( result[ 'awsec2_uuid' ][0], lambda foundation, val: setattr( foundation, 'awsec2_uuid', val ) )
 
     return result
 
   @staticmethod
   def getTscriptFunctions():
-    result = super( VirtualBoxFoundation, VirtualBoxFoundation ).getTscriptFunctions()
+    result = super( AWSEC2Foundation, AWSEC2Foundation ).getTscriptFunctions()
     result[ 'power_on' ] = lambda foundation: ( 'virtualbox', set_power( foundation.virtualbox_uuid, 'on', foundation.locator ) )
     result[ 'power_off' ] = lambda foundation: ( 'virtualbox', set_power( foundation.virtualbox_uuid, 'off', foundation.locator ) )
     result[ 'power_state' ] = lambda foundation: ( 'virtualbox', power_state( foundation.virtualbox_uuid, foundation.locator ) )
-    result[ 'wait_for_poweroff' ] = lambda foundation: ( 'virtualbox', wait_for_poweroff( foundation.virtualbox_uuid, foundation.locator ) )
     result[ 'destroy' ] = lambda foundation: ( 'virtualbox', destroy( foundation.virtualbox_uuid, foundation.locator ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
 
@@ -42,7 +41,7 @@ class VirtualBoxFoundation( Foundation ):
 
   def configValues( self ):
     result = super().configValues()
-    result.update( { 'virtualbox_uuid': self.virtualbox_uuid } )
+    result.update( { 'awsec2_uuid': self.awsec2_uuid } )
 
     return result
 
@@ -52,11 +51,11 @@ class VirtualBoxFoundation( Foundation ):
 
   @property
   def type( self ):
-    return 'VirtualBox'
+    return 'AWSEC2'
 
   @property
   def class_list( self ):
-    return [ 'VM', 'VirtualBox' ]
+    return [ 'AWSEC2' ]
 
   @property
   def can_auto_locate( self ):
@@ -65,7 +64,7 @@ class VirtualBoxFoundation( Foundation ):
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
   def filter_site( site ):
-    return VirtualBoxFoundation.objects.filter( site=site )
+    return AWSEC2Foundation.objects.filter( site=site )
 
   @cinp.check_auth()
   @staticmethod
@@ -73,4 +72,4 @@ class VirtualBoxFoundation( Foundation ):
     return True
 
   def __str__( self ):
-    return 'VirtualBoxFoundation {0}'.format( self.pk )
+    return 'AWSEC2Foundation {0}'.format( self.pk )

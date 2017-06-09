@@ -14,15 +14,15 @@ class create( ExternalFunction ):
     self.in_rollback = False
 
     subcontractor_id = 1
+    mac = '000c29{0:06x}'.format( ( 4 * subcontractor_id ) )  # leaving room for 4 interfaces per foundation
     self.vm_paramaters = {
                            'name': None,
                            'cpu_count': 1,
                            'memory_size': 512,  # in Meg
                            'disk_list': [ { 'name': 'sda', 'size': 5 } ],  # disk size in G
-                           'interface_list': [ { 'type': 'host', 'name': 'vboxnet0', 'mac': '08:00:27:' + '00:00:{0:02x}'.format( ( 4 * subcontractor_id ) + 1 ) } ],  # type one of 'host', 'bridge', 'nat', 'internal',  name is name of network to attach to max 4 interfaces
+                           'interface_list': [ { 'name': 'native', 'mac': ':'.join( mac[ i:i + 2 ] for i in range( 0, 12, 2 ) ) } ],  # name is name of network to attach to
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
-
 
   @property
   def ready( self ):
@@ -174,11 +174,11 @@ class power_state( ExternalFunction ):
     if self.state is not None:
       return True
     else:
-      return 'Waiting for Power State'
+      return 'Retrieving for Power State'
 
   @property
   def value( self ):
-    self.state
+    return self.state
 
   def toSubcontractor( self ):
     return ( 'power_state', { 'uuid': self.uuid, 'name': self.name } )
@@ -213,7 +213,7 @@ class wait_for_poweroff( ExternalFunction ):
     return ( 'power_state', { 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
-    self.current_State = data[ 'state' ]
+    self.current_state = data[ 'state' ]
 
   def __getstate__( self ):
     return ( self.uuid, self.current_state, self.name )
