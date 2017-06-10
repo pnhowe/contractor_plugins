@@ -1,6 +1,11 @@
+import re
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+
 from contractor.tscript.runner import ExternalFunction, ParamaterError
 
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from contractor.Utilities.models import ipAddress2Native, Address
+
+NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 
 
 # exported functions
@@ -8,8 +13,9 @@ class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.done = False
-    self.uuid = None
+    self.instance_id = None
     self.interface_list = []
+    self.ip_address_map = {}
     self.in_rollback = False
     self.instance_paramaters = {}
 
@@ -25,24 +31,33 @@ class create( ExternalFunction ):
 
   @property
   def value( self ):
-    return { 'uuid': self.uuid, 'interface_list': self.interface_list }
+    return { 'instance_id': self.instance_id, 'interface_list': self.interface_list, 'ip_address_map': self.ip_address_map }
 
   def setup( self, parms ):
     try:
-      instance_type = self.getScriptValue( 'foundation', 'awsec2_type' )
+      instance_type = self.getScriptValue( 'config', 'awsec2_type' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Id: {0}'.format( e ) )
-
-    self.vm_paramaters = {
-                           'name': None,
-                           'type': instance_type,
-                           'interface_list': [ { 'name': 'public' } ]  # name is name of network to attach to
-                         }
+      raise ParamaterError( '<internal>', 'Unable to get awsec2_type: {0}'.format( e ) )
 
     try:
-      self.vm_paramaters[ 'name' ] = parms[ 'name' ]
-    except KeyError:
-      raise ParamaterError( 'name', 'required' )
+      image_id = self.getScriptValue( 'config', 'awsec2_image_id' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get awsec2_image_id: {0}'.format( e ) )
+
+    try:
+      name = self.getScriptValue( 'foundation', 'locator' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+
+    if not NAME_REGEX.match( name ):
+      raise ParamaterError( '<internal>', 'invalid name (ie: Foundation Locator)' )
+
+    self.instance_paramaters = {
+                                 'name': name,
+                                 'image_id': image_id,
+                                 'instance_type': instance_type,
+                                 'interface_list': [ { 'name': 'public' } ]  # name is name of network to attach to
+                               }
 
   def toSubcontractor( self ):
     if self.in_rollback:
@@ -55,28 +70,30 @@ class create( ExternalFunction ):
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
       self.done = data.get( 'done', False )
-      self.uuid = data.get( 'uuid', None )
+      self.instance_id = data.get( 'instance_id', None )
       self.interface_list = data.get( 'interface_list', [] )
+      self.ip_address_map = data.get( 'ip_address_map', {} )
 
   def rollback( self ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.done, self.in_rollback, self.uuid, self.interface_list, self.instance_paramaters )
+    return ( self.done, self.in_rollback, self.instance_id, self.interface_list, self.ip_address_map, self.instance_paramaters )
 
   def __setstate__( self, state ):
     self.done = state[0]
     self.in_rollback = state[1]
-    self.uuid = state[2]
+    self.instance_id = state[2]
     self.interface_list = state[3]
-    self.instance_paramaters = state[4]
+    self.ip_address_map = state[4]
+    self.instance_paramaters = state[5]
 
 
 # other functions used by the virtualbox foundation
 class destroy( ExternalFunction ):
-  def __init__( self, uuid, name, *args, **kwargs ):
+  def __init__( self, instance_id, name, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.uuid = uuid
+    self.instance_id = instance_id
     self.name = name
     self.done = None
 
@@ -88,24 +105,24 @@ class destroy( ExternalFunction ):
       return 'Waiting for Instance Destruction'
 
   def toSubcontractor( self ):
-    return ( 'destroy', { 'uuid': self.uuid, 'name': self.name } )
+    return ( 'destroy', { 'instance_id': self.instance_id, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.done = True
 
   def __getstate__( self ):
-    return ( self.done, self.uuid, self.name )
+    return ( self.done, self.instance_id, self.name )
 
   def __setstate__( self, state ):
     self.done = state[0]
-    self.uuid = state[1]
+    self.instance_id = state[1]
     self.name = state[2]
 
 
 class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
-  def __init__( self, uuid, state, name, *args, **kwargs ):
+  def __init__( self, instance_id, state, name, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.uuid = uuid
+    self.instance_id = instance_id
     self.name = name
     self.desired_state = state
     self.curent_state = None
@@ -125,17 +142,17 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     self.curent_state = None
 
   def toSubcontractor( self ):
-    return ( 'set_power', { 'state': self.desired_state, 'uuid': self.uuid, 'name': self.name, 'sent': self.sent } )
+    return ( 'set_power', { 'state': self.desired_state, 'instance_id': self.instance_id, 'name': self.name, 'sent': self.sent } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
     self.sent = True
 
   def __getstate__( self ):
-    return ( self.uuid, self.desired_state, self.curent_state, self.sent, self.name )
+    return ( self.instance_id, self.desired_state, self.curent_state, self.sent, self.name )
 
   def __setstate__( self, state ):
-    self.uuid = state[0]
+    self.instance_id = state[0]
     self.desired_state = state[1]
     self.curent_state = state[2]
     self.sent = state[3]
@@ -143,9 +160,9 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
 
 
 class power_state( ExternalFunction ):
-  def __init__( self, uuid, name, *args, **kwargs ):
+  def __init__( self, instance_id, name, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.uuid = uuid
+    self.instance_id = instance_id
     self.name = name
     self.state = None
 
@@ -161,16 +178,16 @@ class power_state( ExternalFunction ):
     return self.state
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'uuid': self.uuid, 'name': self.name } )
+    return ( 'power_state', { 'instance_id': self.instance_id, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.state, self.name )
+    return ( self.instance_id, self.state, self.name )
 
   def __setstate__( self, state ):
-    self.uuid = state[0]
+    self.instance_id = state[0]
     self.state = state[1]
     self.name = state[2]
 
@@ -195,6 +212,23 @@ class set_interface_macs():
         raise ParamaterError( 'interface_list', 'Error saving interface "{0}": {1}'.format( interface[ 'name' ], e ) )
 
       iface.save()
+
+
+class set_ip_addresses():
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.foundation = foundation
+
+  def __call__( self, ip_address_map ):
+    for interface, ip_address in ip_address_map.items():
+      address_block, address_offset = ipAddress2Native( ip_address )
+      addr = Address( networked=self.foundation.structure, address_block=address_block, interface_name=interface, offset=address_offset )
+      if interface == 'eth0':  # TODO: this needs to be improved, mabey set it to provisioning/primary if none allready exist
+        addr.is_primary = True
+        addr.is_provisioning = True
+
+      addr.full_clean()
+      addr.save()
 
 
 # plugin exports
