@@ -15,7 +15,7 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.AWS.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class AWSEC2Foundation( Foundation ):
-  awsec2_instance_id = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be multiple AWS accounts
+  awsec2_instance_id = models.CharField( max_length=19, blank=True, null=True )  # not going to do unique, there could be multiple AWS accounts
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly

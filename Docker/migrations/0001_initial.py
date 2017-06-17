@@ -10,33 +10,31 @@ def load_foundation_blueprints( app, schema_editor ):
   Script = app.get_model( 'BluePrint', 'Script' )
   BluePrintScript = app.get_model( 'BluePrint', 'BluePrintScript' )
 
-  fbp = FoundationBluePrint( name='generic-awsec2-micro', description='Generic AWS EC2 t2.micro Instance' )
-  fbp.config_values = { 'awsec2_type': 't2.micro' }
+  fbp = FoundationBluePrint( name='generic-docker', description='Generic Docker Container' )
+  fbp.config_values = {}
   fbp.template = {}
-  fbp.foundation_type_list = [ 'AWSEC2' ]
-  fbp.physical_interface_names = [ 'eth0' ]
+  fbp.foundation_type_list = [ 'Docker' ]
+  fbp.physical_interface_names = []
   fbp.full_clean()
   fbp.save()
 
-  s = Script( name='create-generic-awsec2', description='Create AWS EC2 Instance' )
-  s.script = """# Create Generic AWS EC2 Instance
-begin( description="Instance Creation" )
-  instance = aws.create()
-  foundation.awsec2_instance_id = instance[ 'instance_id' ]
-  foundation.set_interface_macs( interface_list=instance[ 'interface_list' ] )
-  foundation.set_ip_addresses( ip_address_map=instance[ 'ip_address_map' ] )
+  s = Script( name='create-generic-docker', description='Create Docker Container' )
+  s.script = """# Create Generic Docker Container
+begin( description="Container Creation" )
+  container = docker.create()
+  foundation.container_id = container[ 'container_id' ]
 end
   """
   s.full_clean()
   s.save()
   BluePrintScript( blueprint=fbp, script=s, name='create' ).save()
 
-  s = Script( name='destroy-generic-awsec2', description='Destroy AWS EC2 Instance' )
-  s.script = """# Destory Generic AWS EC2 Instance
+  s = Script( name='destroy-generic-docker', description='Destroy Docker Container' )
+  s.script = """# Destory Generic Docker Container
 begin( description="Instance Destruction" )
-  foundation.power_off()
+  foundation.stop()
   foundation.destroy()
-  foundation.awsec2_instance_id = None
+  foundation.container_id = None
 end
   """
   s.full_clean()
@@ -56,10 +54,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='AWSEC2Foundation',
+            name='DockerFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(auto_created=True, primary_key=True, parent_link=True, serialize=False, to='Building.Foundation')),
-                ('awsec2_instance_id', models.CharField(max_length=19, blank=True, null=True)),
+                ('foundation_ptr', models.OneToOneField(to='Building.Foundation', serialize=False, parent_link=True, auto_created=True, primary_key=True)),
+                ('container_id', models.CharField(blank=True, null=True, max_length=64)),
             ],
             bases=('Building.foundation',),
         ),
