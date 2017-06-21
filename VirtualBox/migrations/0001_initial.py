@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+import django.db.models.deletion
 
 
 def load_foundation_blueprints( app, schema_editor ):
@@ -57,8 +58,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='VirtualBoxFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(parent_link=True, to='Building.Foundation', serialize=False, primary_key=True, auto_created=True)),
-                ('virtualbox_uuid', models.CharField(blank=True, max_length=36, null=True)),
+                ('foundation_ptr', models.OneToOneField(serialize=False, primary_key=True, to='Building.Foundation', auto_created=True, parent_link=True)),
+                ('virtualbox_uuid', models.CharField(null=True, blank=True, max_length=36)),
+                ('virtualbox_host', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='Building.Complex')),
             ],
             bases=('Building.foundation',),
         ),

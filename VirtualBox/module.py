@@ -116,10 +116,10 @@ class create( ExternalFunction ):
 
 # other functions used by the virtualbox foundation
 class destroy( ExternalFunction ):
-  def __init__( self, uuid, name, *args, **kwargs ):
+  def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.uuid = uuid
-    self.name = name
+    self.uuid = foundation.virtualbox_uuid
+    self.name = foundation.locator
     self.done = None
 
   @property
@@ -145,10 +145,10 @@ class destroy( ExternalFunction ):
 
 
 class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
-  def __init__( self, uuid, state, name, *args, **kwargs ):
+  def __init__( self, foundation, state, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.uuid = uuid
-    self.name = name
+    self.uuid = foundation.virtualbox_uuid
+    self.name = foundation.locator
     self.desired_state = state
     self.curent_state = None
     self.counter = 0
@@ -190,10 +190,10 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
 
 
 class power_state( ExternalFunction ):
-  def __init__( self, uuid, name, *args, **kwargs ):
+  def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.uuid = uuid
-    self.name = name
+    self.uuid = foundation.virtualbox_uuid
+    self.name = foundation.locator
     self.state = None
 
   @property
@@ -223,10 +223,10 @@ class power_state( ExternalFunction ):
 
 
 class wait_for_poweroff( ExternalFunction ):
-  def __init__( self, uuid, name, *args, **kwargs ):
+  def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.uuid = uuid
-    self.name = name
+    self.uuid = foundation.virtualbox_uuid
+    self.name = foundation.locator
     self.current_state = None
 
   @property

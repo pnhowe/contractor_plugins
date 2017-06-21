@@ -2,7 +2,7 @@ from django.db import models
 
 from cinp.orm_django import DjangoCInP as CInP
 
-from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
+from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
 from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, set_interface_macs
@@ -16,6 +16,7 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
   virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
+  virtualbox_host = models.ForeignKey( Complex, on_delete=models.PROTECT )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
@@ -31,11 +32,11 @@ class VirtualBoxFoundation( Foundation ):
   @staticmethod
   def getTscriptFunctions():
     result = super( VirtualBoxFoundation, VirtualBoxFoundation ).getTscriptFunctions()
-    result[ 'power_on' ] = lambda foundation: ( 'virtualbox', set_power( foundation.virtualbox_uuid, 'on', foundation.locator ) )
-    result[ 'power_off' ] = lambda foundation: ( 'virtualbox', set_power( foundation.virtualbox_uuid, 'off', foundation.locator ) )
-    result[ 'power_state' ] = lambda foundation: ( 'virtualbox', power_state( foundation.virtualbox_uuid, foundation.locator ) )
-    result[ 'wait_for_poweroff' ] = lambda foundation: ( 'virtualbox', wait_for_poweroff( foundation.virtualbox_uuid, foundation.locator ) )
-    result[ 'destroy' ] = lambda foundation: ( 'virtualbox', destroy( foundation.virtualbox_uuid, foundation.locator ) )
+    result[ 'power_on' ] = lambda foundation: ( 'virtualbox', set_power( foundation, 'on' ) )
+    result[ 'power_off' ] = lambda foundation: ( 'virtualbox', set_power( foundation, 'off' ) )
+    result[ 'power_state' ] = lambda foundation: ( 'virtualbox', power_state( foundation ) )
+    result[ 'wait_for_poweroff' ] = lambda foundation: ( 'virtualbox', wait_for_poweroff( foundation ) )
+    result[ 'destroy' ] = lambda foundation: ( 'virtualbox', destroy( foundation ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
 
     return result
