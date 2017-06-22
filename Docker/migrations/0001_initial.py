@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+import django.db.models.deletion
 
 
 def load_foundation_blueprints( app, schema_editor ):
@@ -54,10 +55,18 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='DockerComplex',
+            fields=[
+                ('complex_ptr', models.OneToOneField(parent_link=True, to='Building.Complex', serialize=False, primary_key=True, auto_created=True)),
+            ],
+            bases=('Building.complex',),
+        ),
+        migrations.CreateModel(
             name='DockerFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(to='Building.Foundation', serialize=False, parent_link=True, auto_created=True, primary_key=True)),
-                ('container_id', models.CharField(blank=True, null=True, max_length=64)),
+                ('foundation_ptr', models.OneToOneField(parent_link=True, to='Building.Foundation', serialize=False, primary_key=True, auto_created=True)),
+                ('container_id', models.CharField(null=True, max_length=64, blank=True)),
+                ('container_host', models.ForeignKey(to='Docker.DockerComplex', on_delete=django.db.models.deletion.PROTECT)),
             ],
             bases=('Building.foundation',),
         ),

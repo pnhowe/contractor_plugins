@@ -74,10 +74,10 @@ class create( ExternalFunction ):
 
 # other functions used by the virtualbox foundation
 class destroy( ExternalFunction ):
-  def __init__( self, container_id, name, *args, **kwargs ):
+  def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.container_id = container_id
-    self.name = name
+    self.container_id = foundation.container_id
+    self.name = foundation.locator
     self.done = None
 
   @property
@@ -103,10 +103,10 @@ class destroy( ExternalFunction ):
 
 
 class start_stop( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
-  def __init__( self, container_id, state, name, *args, **kwargs ):
+  def __init__( self, foundation, state, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.container_id = container_id
-    self.name = name
+    self.container_id = foundation.container_id
+    self.name = foundation.locator
     self.desired_state = state
     self.curent_state = None
     self.sent = False
@@ -143,10 +143,10 @@ class start_stop( ExternalFunction ):  # TODO: need a delay after each power com
 
 
 class state( ExternalFunction ):
-  def __init__( self, instance_id, name, *args, **kwargs ):
+  def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.instance_id = instance_id
-    self.name = name
+    self.container_id = foundation.container_id
+    self.name = foundation.locator
     self.state = None
 
   @property
