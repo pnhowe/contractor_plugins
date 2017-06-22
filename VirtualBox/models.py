@@ -1,8 +1,9 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from cinp.orm_django import DjangoCInP as CInP
 
-from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST
+from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
 from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, set_interface_macs
@@ -10,13 +11,33 @@ from contractor_plugins.VirtualBox.module import set_power, power_state, wait_fo
 cinp = CInP( 'VirtualBox', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'virtualboxfoundation' )
+COMPLEX_SUBCLASS_LIST.append( 'virtualboxcomplex' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
+
+
+@cinp.model( property_list=( 'state', 'type' ) )
+class VirtualBoxComplex( Complex ):
+  @property
+  def subclass( self ):
+    return self
+
+  @property
+  def type( self ):
+    return 'VirtualBox'
+
+  @cinp.check_auth()
+  @staticmethod
+  def checkAuth( user, method, id_list, action=None ):
+    return True
+
+  def __str__( self ):
+    return 'VirtualBoxComplex {0}'.format( self.pk )
 
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
   virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
-  virtualbox_host = models.ForeignKey( Complex, on_delete=models.PROTECT )
+  virtualbox_host = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
@@ -72,6 +93,16 @@ class VirtualBoxFoundation( Foundation ):
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
     return True
+
+  def clean( self, *args, **kwargs ):
+    super().clean( *args, **kwargs )
+    errors = {}
+
+    if self.site.pk != self.virtualbox_host.site.pk:
+      errors[ 'site' ] = 'Site must match the virtualbox_host\'s site'
+
+    if errors:
+      raise ValidationError( errors )
 
   def __str__( self ):
     return 'VirtualBoxFoundation {0}'.format( self.pk )

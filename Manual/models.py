@@ -6,6 +6,7 @@ cinp = CInP( 'Manual', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'manualfoundation' )
 
+
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class ManualFoundation( Foundation ):
   @property
@@ -23,7 +24,7 @@ class ManualFoundation( Foundation ):
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
   def filter_site( site ):
-    return VirtualBoxFoundation.objects.filter( site=site )
+    return ManualFoundation.objects.filter( site=site )
 
   @cinp.check_auth()
   @staticmethod
