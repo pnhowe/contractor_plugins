@@ -30,8 +30,18 @@ class DockerComplex( Complex ):
   def checkAuth( user, method, id_list, action=None ):
     return True
 
+  def clean( self, *args, **kwargs ):
+    super().clean( *args, **kwargs )
+    errors = {}
+
+    if self.pk and self.members.count() > 1:
+      errors[ 'structure' ] = 'Docker Complex support only one structure'
+
+    if errors:
+      raise ValidationError( errors )
+
   def __str__( self ):
-    return 'VirtualBoxComplex {0}'.format( self.pk )
+    return 'DockerComplex {0}'.format( self.pk )
 
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )

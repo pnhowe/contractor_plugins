@@ -30,6 +30,16 @@ class VirtualBoxComplex( Complex ):
   def checkAuth( user, method, id_list, action=None ):
     return True
 
+  def clean( self, *args, **kwargs ):
+    super().clean( *args, **kwargs )
+    errors = {}
+
+    if self.pk and self.members.count() > 1:
+      errors[ 'structure' ] = 'VirtualBox Complex support only one structure'
+
+    if errors:
+      raise ValidationError( errors )
+
   def __str__( self ):
     return 'VirtualBoxComplex {0}'.format( self.pk )
 

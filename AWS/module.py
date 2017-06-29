@@ -222,12 +222,19 @@ class set_ip_addresses():
   def __call__( self, ip_address_map ):
     for interface, ip_address in ip_address_map.items():
       address_block, address_offset = ipAddress2Native( ip_address )
-      addr = Address( networked=self.foundation.structure, address_block=address_block, interface_name=interface, offset=address_offset )
-      if interface == 'eth0':  # TODO: this needs to be improved, mabey set it to provisioning/primary if none allready exist
-        addr.is_primary = True
-        addr.is_provisioning = True
+      try:
+        addr = Address.objects.get( networked=self.foundation.structure, interface_name=interface )
+      except ObjectDoesNotExist:
+        raise ParamaterError( 'ip_address_map', 'Address for interface "{0}" does not exist'.format( interface ) )
 
-      addr.full_clean()
+      addr.offset = address_offset
+      addr.address_block = address_block
+
+      try:
+        addr.full_clean()
+      except ValidationError as e:
+        raise ParamaterError( 'ip_address_map', 'Error Saving ip Address "{0}": {1}'.format( interface, e ) )
+
       addr.save()
 
 
