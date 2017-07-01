@@ -25,6 +25,9 @@ class ping( ExternalFunction ):
     except KeyError:
       raise ParamaterError( 'target', 'required' )
 
+    if self.target is None:
+      raise ParamaterError( 'target', 'is None' )
+
     try:
       self.count = int( parms.get( 'count', 5 ) )
     except ( ValueError, TypeError ):
@@ -62,6 +65,9 @@ class waitForPort( ExternalFunction ):
       self.target = parms[ 'target' ]
     except KeyError:
       raise ParamaterError( 'target', 'required' )
+
+    if self.target is None:
+      raise ParamaterError( 'target', 'is None' )
 
     try:
       self.port = int( parms[ 'port' ] )
