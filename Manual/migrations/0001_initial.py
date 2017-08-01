@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+import django.db.models.deletion
 
 
 def load_foundation_blueprints( app, schema_editor ):
@@ -40,7 +41,6 @@ pause( msg='Resume script when Server is Off' )
   BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
 
 
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -49,9 +49,24 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='ManualComplex',
+            fields=[
+                ('complex_ptr', models.OneToOneField(serialize=False, auto_created=True, to='Building.Complex', primary_key=True, parent_link=True)),
+            ],
+            bases=('Building.complex',),
+        ),
+        migrations.CreateModel(
+            name='ManualComplexedFoundation',
+            fields=[
+                ('foundation_ptr', models.OneToOneField(serialize=False, auto_created=True, to='Building.Foundation', primary_key=True, parent_link=True)),
+                ('complex_host', models.ForeignKey(to='Manual.ManualComplex', on_delete=django.db.models.deletion.PROTECT)),
+            ],
+            bases=('Building.foundation',),
+        ),
+        migrations.CreateModel(
             name='ManualFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(serialize=False, to='Building.Foundation', primary_key=True, auto_created=True, parent_link=True)),
+                ('foundation_ptr', models.OneToOneField(serialize=False, auto_created=True, to='Building.Foundation', primary_key=True, parent_link=True)),
             ],
             bases=('Building.foundation',),
         ),
