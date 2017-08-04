@@ -8,6 +8,7 @@ from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_
 cinp = CInP( 'Manual', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'manualfoundation' )
+FOUNDATION_SUBCLASS_LIST.append( 'manualcomplexedfoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'manualcomplex' )
 
 
@@ -88,6 +89,10 @@ class ManualComplexedFoundation( Foundation ):
   @property
   def can_auto_locate( self ):
     return self.complex_host.state == 'built' and self.structure.auto_build
+
+  @property
+  def complex( self ):
+    return self.complex_host
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod

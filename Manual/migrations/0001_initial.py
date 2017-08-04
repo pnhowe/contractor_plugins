@@ -14,12 +14,16 @@ def load_foundation_blueprints( app, schema_editor ):
   fbp = FoundationBluePrint( name='generic-manual', description='Generic Manual(Non-IPMI/DRAC/Blade/etc) Server' )
   fbp.config_values = {}
   fbp.template = {}
-  fbp.foundation_type_list = [ 'Manual' ]
+  fbp.foundation_type_list = [ 'Manual', 'ManualComplex' ]
   fbp.physical_interface_names = [ 'eth0' ]
   fbp.full_clean()
   fbp.save()
 
   sbpl = StructureBluePrint.objects.get( name='generic-linux' )
+  sbpl.foundation_blueprint_list.add( fbp )
+  sbpl.save()
+
+  sbpl = StructureBluePrint.objects.get( name='generic-manual-structure' )
   sbpl.foundation_blueprint_list.add( fbp )
   sbpl.save()
 

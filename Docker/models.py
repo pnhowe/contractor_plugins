@@ -98,6 +98,10 @@ class DockerFoundation( Foundation ):
   def can_auto_locate( self ):
     return self.container_host.state == 'built' and self.structure.auto_build
 
+  @property
+  def complex( self ):
+    return self.container_host
+
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
   def filter_site( site ):
