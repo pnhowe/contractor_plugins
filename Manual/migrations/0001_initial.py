@@ -44,6 +44,13 @@ pause( msg='Resume script when Server is Off' )
   s.save()
   BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
 
+  s = Script( name='utility-generic-manual', description='Utility Script for Manual Server' )
+  s.script = """# Utility Script for Generic Manual Server
+pause( msg='Do the thing' )
+  """
+  s.full_clean()
+  s.save()
+  BluePrintScript( blueprint=fbp, script=s, name='utility' ).save()
 
 class Migration(migrations.Migration):
 
