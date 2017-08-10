@@ -46,7 +46,7 @@ pause( msg='Resume script when Server is Off' )
 
   s = Script( name='utility-generic-manual', description='Utility Script for Manual Server' )
   s.script = """# Utility Script for Generic Manual Server
-pause( msg='Do the thing' )
+pause( msg='Do the thing, then Resume' )
   """
   s.full_clean()
   s.save()
