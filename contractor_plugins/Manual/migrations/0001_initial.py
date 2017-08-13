@@ -52,6 +52,14 @@ pause( msg='Do the thing, then Resume' )
   s.save()
   BluePrintScript( blueprint=fbp, script=s, name='utility' ).save()
 
+  s = Script( name='utility2-generic-manual', description='Utility2 Script for Manual Server' )
+  s.script = """# Utility Script for Generic Manual Server
+pause( msg='Do the other thing, then Resume' )
+  """
+  s.full_clean()
+  s.save()
+  BluePrintScript( blueprint=fbp, script=s, name='utility2' ).save()
+
 class Migration(migrations.Migration):
 
     dependencies = [
