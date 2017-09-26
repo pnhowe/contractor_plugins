@@ -33,7 +33,7 @@ class AWSEC2Foundation( Foundation ):
     result = super( AWSEC2Foundation, AWSEC2Foundation ).getTscriptFunctions()
     result[ 'power_on' ] = lambda foundation: ( 'aws', set_power( foundation, 'on' ) )
     result[ 'power_off' ] = lambda foundation: ( 'aws', set_power( foundation, 'off' ) )
-    result[ 'power_state' ] = lambda foundation: ( 'aws', power_state( foundation) )
+    result[ 'power_state' ] = lambda foundation: ( 'aws', power_state( foundation ) )
     result[ 'destroy' ] = lambda foundation: ( 'aws', destroy( foundation ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
     result[ 'set_ip_addresses' ] = lambda foundation: set_ip_addresses( foundation )

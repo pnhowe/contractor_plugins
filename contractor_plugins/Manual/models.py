@@ -5,6 +5,8 @@ from cinp.orm_django import DjangoCInP as CInP
 
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 
+from contractor_plugins.Manual.module import set_power, power_state, wait_for_poweroff
+
 cinp = CInP( 'Manual', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'manualfoundation' )
@@ -40,6 +42,27 @@ class ManualComplex( Complex ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class ManualFoundation( Foundation ):
+  @staticmethod
+  def getTscriptValues( write_mode=False ):  # locator is handled seperatly
+    result = super( ManualFoundation, ManualFoundation ).getTscriptValues( write_mode )
+
+    return result
+
+  @staticmethod
+  def getTscriptFunctions():
+    result = super( ManualFoundation, ManualFoundation ).getTscriptFunctions()
+    result[ 'power_on' ] = lambda foundation: ( 'manual', set_power( foundation, 'on' ) )
+    result[ 'power_off' ] = lambda foundation: ( 'manual', set_power( foundation, 'off' ) )
+    result[ 'power_state' ] = lambda foundation: ( 'manual', power_state( foundation ) )
+    result[ 'wait_for_poweroff' ] = lambda foundation: ( 'manual', wait_for_poweroff( foundation ) )
+
+    return result
+
+  def configValues( self ):
+    result = super().configValues()
+
+    return result
+
   @property
   def subclass( self ):
     return self

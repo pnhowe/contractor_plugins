@@ -30,7 +30,6 @@ def load_foundation_blueprints( app, schema_editor ):
   s = Script( name='create-generic-manual', description='Create Manual Server' )
   s.script = """# Test and Configure Generic Manual Server
 pause( msg='Resume when Server is Powered Off' )
-pause( msg='Power On Server and Resume' )
   """
   s.full_clean()
   s.save()
