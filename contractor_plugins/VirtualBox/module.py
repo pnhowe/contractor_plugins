@@ -136,12 +136,12 @@ class destroy( ExternalFunction ):
     self.done = True
 
   def __getstate__( self ):
-    return ( self.done, self.uuid, self.name )
+    return ( self.done, self.name, self.uuid )
 
   def __setstate__( self, state ):
     self.done = state[0]
-    self.uuid = state[1]
-    self.name = state[2]
+    self.name = state[1]
+    self.uuid = state[2]
 
 
 class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
@@ -179,14 +179,14 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     self.curent_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.desired_state, self.curent_state, self.counter, self.name )
+    return ( self.uuid, self.name, self.desired_state, self.curent_state, self.counter )
 
   def __setstate__( self, state ):
     self.uuid = state[0]
-    self.desired_state = state[1]
-    self.curent_state = state[2]
-    self.counter = state[3]
-    self.name = state[4]
+    self.name = state[1]
+    self.desired_state = state[2]
+    self.curent_state = state[3]
+    self.counter = state[4]
 
 
 class power_state( ExternalFunction ):
@@ -214,12 +214,12 @@ class power_state( ExternalFunction ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.state, self.name )
+    return ( self.uuid, self.name, self.state )
 
   def __setstate__( self, state ):
     self.uuid = state[0]
-    self.state = state[1]
-    self.name = state[2]
+    self.name = state[1]
+    self.state = state[2]
 
 
 class wait_for_poweroff( ExternalFunction ):
@@ -243,12 +243,12 @@ class wait_for_poweroff( ExternalFunction ):
     self.current_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.current_state, self.name )
+    return ( self.uuid, self.name, self.current_state )
 
   def __setstate__( self, state ):
     self.uuid = state[0]
-    self.current_state = state[1]
-    self.name = state[2]
+    self.name = state[1]
+    self.current_state = state[2]
 
 
 class set_interface_macs():
