@@ -40,9 +40,9 @@ class AWSEC2Foundation( Foundation ):
 
     return result
 
-  def configValues( self ):
+  def configAttributes( self ):
     structure_config = self.structure.blueprint.getConfig()
-    result = super().configValues()
+    result = super().configAttributes()
     result.update( { 'awsec2_instance_id': self.awsec2_instance_id } )
 
     try:

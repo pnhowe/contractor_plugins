@@ -78,7 +78,8 @@ class create( ExternalFunction ):
                            'cpu_count': cpu_count,
                            'memory_size': memory_size,  # in Meg
                            'disk_list': [ { 'name': 'sda', 'size': 5 } ],  # disk size in G
-                           'interface_list': [ { 'type': 'host', 'name': 'vboxnet0', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  name is name of network to attach to, max 4 interfaces
+                           'interface_list': [ { 'type': 'bridge', 'name': 'enx847beb5.1000', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  name is name of network to attach to, max 4 interfaces
+                           #'interface_list': [ { 'type': 'host', 'name': 'vboxnet0', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  name is name of network to attach to, max 4 interfaces
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
 

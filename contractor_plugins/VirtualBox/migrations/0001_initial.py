@@ -47,6 +47,10 @@ end
   sbpl.foundation_blueprint_list.add( fbp )
   sbpl.save()
 
+  sbpe = StructureBluePrint.objects.get( name='generic-esx' )
+  sbpe.foundation_blueprint_list.add( fbp )
+  sbpe.save()
+
 
 class Migration(migrations.Migration):
 

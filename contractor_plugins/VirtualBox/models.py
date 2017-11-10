@@ -72,8 +72,8 @@ class VirtualBoxFoundation( Foundation ):
 
     return result
 
-  def configValues( self ):
-    result = super().configValues()
+  def configAttributes( self ):
+    result = super().configAttributes()
     result.update( { 'virtualbox_uuid': self.virtualbox_uuid } )
 
     return result

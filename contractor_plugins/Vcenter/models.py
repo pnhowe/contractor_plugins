@@ -39,8 +39,8 @@ class VcenterFoundation( Foundation ):
 
     return result
 
-  def configValues( self ):
-    result = super().configValues()
+  def configAttributes( self ):
+    result = super().configAttributes()
     result.update( { 'vcenter_uuid': self.vcenter_uuid } )
 
     return result

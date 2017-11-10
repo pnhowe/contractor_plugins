@@ -58,8 +58,8 @@ class ManualFoundation( Foundation ):
 
     return result
 
-  def configValues( self ):
-    result = super().configValues()
+  def configAttributes( self ):
+    result = super().configAttributes()
 
     return result
 
