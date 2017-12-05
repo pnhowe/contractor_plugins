@@ -3,7 +3,9 @@ from django.core.exceptions import ValidationError
 
 from cinp.orm_django import DjangoCInP as CInP
 
-from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
+from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST, FoundationNetworkInterface
+from contractor.Utilities.models import RealNetworkInterface
+from contractor.BluePrint.models import FoundationBluePrint
 
 from contractor_plugins.Manual.module import set_power, power_state, wait_for_poweroff
 
@@ -23,6 +25,22 @@ class ManualComplex( Complex ):
   @property
   def type( self ):
     return 'Manual'
+
+  def newFoundation( self, hostname ):
+    foundation = ManualComplexedFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-manual' ), locator=hostname )
+    foundation.complex_host = self
+    foundation.full_clean()
+    foundation.save()
+
+    iface = RealNetworkInterface( name='eth0', is_provisioning=True )
+    iface.full_clean()
+    iface.save()
+
+    fni = FoundationNetworkInterface( foundation=foundation, interface=iface, physical_location='eth0' )
+    fni.full_clean()
+    fni.save()
+
+    return foundation
 
   @cinp.check_auth()
   @staticmethod
@@ -73,7 +91,7 @@ class ManualFoundation( Foundation ):
 
   @property
   def class_list( self ):
-    return [ 'Metal', 'Manual' ]
+    return [ 'Metal', 'VM', 'Container', 'Switch', 'Manual' ]
 
   @property
   def can_auto_locate( self ):
