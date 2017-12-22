@@ -10,8 +10,8 @@ def load_foundation_blueprints( app, schema_editor ):
   Script = app.get_model( 'BluePrint', 'Script' )
   BluePrintScript = app.get_model( 'BluePrint', 'BluePrintScript' )
 
-  fbp = FoundationBluePrint( name='generic-awsec2', description='Generic VirtualBox VM' )
-  fbp.config_values = {}
+  fbp = FoundationBluePrint( name='generic-awsec2-micro', description='Generic AWS EC2 t2.micro Instance' )
+  fbp.config_values = { 'awsec2_type': 't2.micro' }
   fbp.template = {}
   fbp.foundation_type_list = [ 'AWSEC2' ]
   fbp.physical_interface_names = [ 'eth0' ]
@@ -22,8 +22,9 @@ def load_foundation_blueprints( app, schema_editor ):
   s.script = """# Create Generic AWS EC2 Instance
 begin( description="Instance Creation" )
   instance = aws.create()
-  foundation.awsec2_uuid = instance[ 'uuid' ]
+  foundation.awsec2_instance_id = instance[ 'instance_id' ]
   foundation.set_interface_macs( interface_list=instance[ 'interface_list' ] )
+  foundation.set_ip_addresses( ip_address_map=instance[ 'ip_address_map' ] )
 end
   """
   s.full_clean()
@@ -35,7 +36,7 @@ end
 begin( description="Instance Destruction" )
   foundation.power_off()
   foundation.destroy()
-  foundation.awsec2_uuid = None
+  foundation.awsec2_instance_id = None
 end
   """
   s.full_clean()
@@ -58,7 +59,7 @@ class Migration(migrations.Migration):
             name='AWSEC2Foundation',
             fields=[
                 ('foundation_ptr', models.OneToOneField(auto_created=True, primary_key=True, parent_link=True, serialize=False, to='Building.Foundation')),
-                ('awsec2_uuid', models.CharField(max_length=36, blank=True, null=True)),
+                ('awsec2_instance_id', models.CharField(max_length=36, blank=True, null=True)),
             ],
             bases=('Building.foundation',),
         ),

@@ -5,43 +5,50 @@ from cinp.orm_django import DjangoCInP as CInP
 from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
-from contractor_plugins.AWS.module import set_power, power_state, destroy, set_interface_macs
+from contractor_plugins.AWS.module import set_power, power_state, destroy, set_interface_macs, set_ip_addresses
 
 cinp = CInP( 'AWS', '0.1' )
 
-FOUNDATION_SUBCLASS_LIST.append( 'awsoundation' )
+FOUNDATION_SUBCLASS_LIST.append( 'awsec2foundation' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.AWS.module' )
 
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class AWSEC2Foundation( Foundation ):
-  awsec2_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be multiple AWS accounts
+  awsec2_instance_id = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be multiple AWS accounts
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( AWSEC2Foundation, AWSEC2Foundation ).getTscriptValues( write_mode )
 
-    result[ 'awsec2_uuid' ] = ( lambda foundation: foundation.awsec2_uuid, None )
+    result[ 'awsec2_instance_id' ] = ( lambda foundation: foundation.awsec2_instance_id, None )
 
     if write_mode is True:
-      result[ 'awsec2_uuid' ] = ( result[ 'awsec2_uuid' ][0], lambda foundation, val: setattr( foundation, 'awsec2_uuid', val ) )
+      result[ 'awsec2_instance_id' ] = ( result[ 'awsec2_instance_id' ][0], lambda foundation, val: setattr( foundation, 'awsec2_instance_id', val ) )
 
     return result
 
   @staticmethod
   def getTscriptFunctions():
     result = super( AWSEC2Foundation, AWSEC2Foundation ).getTscriptFunctions()
-    result[ 'power_on' ] = lambda foundation: ( 'virtualbox', set_power( foundation.virtualbox_uuid, 'on', foundation.locator ) )
-    result[ 'power_off' ] = lambda foundation: ( 'virtualbox', set_power( foundation.virtualbox_uuid, 'off', foundation.locator ) )
-    result[ 'power_state' ] = lambda foundation: ( 'virtualbox', power_state( foundation.virtualbox_uuid, foundation.locator ) )
-    result[ 'destroy' ] = lambda foundation: ( 'virtualbox', destroy( foundation.virtualbox_uuid, foundation.locator ) )
+    result[ 'power_on' ] = lambda foundation: ( 'aws', set_power( foundation.awsec2_instance_id, 'on', foundation.locator ) )
+    result[ 'power_off' ] = lambda foundation: ( 'aws', set_power( foundation.awsec2_instance_id, 'off', foundation.locator ) )
+    result[ 'power_state' ] = lambda foundation: ( 'aws', power_state( foundation.awsec2_instance_id, foundation.locator ) )
+    result[ 'destroy' ] = lambda foundation: ( 'aws', destroy( foundation.awsec2_instance_id, foundation.locator ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
+    result[ 'set_ip_addresses' ] = lambda foundation: set_ip_addresses( foundation )
 
     return result
 
   def configValues( self ):
+    structure_config = self.structure.blueprint.getConfig()
     result = super().configValues()
-    result.update( { 'awsec2_uuid': self.awsec2_uuid } )
+    result.update( { 'awsec2_instance_id': self.awsec2_instance_id } )
+
+    try:
+      result.update( { 'awsec2_image_id': structure_config[ 'awsec2_image_id' ] } )
+    except KeyError:
+      pass
 
     return result
 
