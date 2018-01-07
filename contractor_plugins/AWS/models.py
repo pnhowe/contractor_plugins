@@ -41,12 +41,12 @@ class AWSEC2Foundation( Foundation ):
     return result
 
   def configAttributes( self ):
-    structure_config = self.structure.blueprint.getConfig()
+    structure_blueprint_config = self.structure.blueprint.getConfig()
     result = super().configAttributes()
     result.update( { 'awsec2_instance_id': self.awsec2_instance_id } )
 
     try:
-      result.update( { 'awsec2_image_id': structure_config[ 'awsec2_image_id' ] } )
+      result.update( { 'awsec2_image_id': structure_blueprint_config[ 'awsec2_image_id' ] } )
     except KeyError:
       pass
 

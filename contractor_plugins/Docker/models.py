@@ -5,6 +5,7 @@ from cinp.orm_django import DjangoCInP as CInP
 
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
+from contractor.lib.config import _structureConfig
 
 from contractor_plugins.Docker.module import start_stop, state, destroy
 
@@ -44,19 +45,20 @@ class DockerComplex( Complex ):
     return 'DockerComplex {0}'.format( self.pk )
 
 
-@cinp.model( property_list=( 'state', 'type', 'class_list' ) )
+@cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=[ 'docker_id' ] )
 class DockerFoundation( Foundation ):
-  container_host = models.ForeignKey( DockerComplex, on_delete=models.PROTECT )
-  container_id = models.CharField( max_length=64, blank=True, null=True )  # not going to do unique, there could be multiple docker hosts
+  docker_host = models.ForeignKey( DockerComplex, on_delete=models.PROTECT )
+  docker_id = models.CharField( max_length=64, blank=True, null=True )  # not going to do unique, there could be multiple docker hosts
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( DockerFoundation, DockerFoundation ).getTscriptValues( write_mode )
 
-    result[ 'container_id' ] = ( lambda foundation: foundation.docker_id, None )
+    result[ 'docker_id' ] = ( lambda foundation: foundation.docker_id, None )
+    result[ 'docker_host' ] = ( lambda foundation: foundation.host_ip, None )
 
     if write_mode is True:
-      result[ 'container_id' ] = ( result[ 'container_id' ][0], lambda foundation, val: setattr( foundation, 'container_id', val ) )
+      result[ 'docker_id' ] = ( result[ 'docker_id' ][0], lambda foundation, val: setattr( foundation, 'docker_id', val ) )
 
     return result
 
@@ -71,12 +73,19 @@ class DockerFoundation( Foundation ):
     return result
 
   def configAttributes( self ):
-    structure_config = self.structure.blueprint.getConfig()
+    structure_blueprint_config = self.structure.blueprint.getConfig()
     result = super().configAttributes()
-    result.update( { 'container_id': self.container_id } )
+    result.update( { 'docker_id': self.docker_id } )
+
+    _structureConfig( self.structure, [], structure_blueprint_config )  # TODO: need a getConfig (above) that only does the structure and it's blueprint
 
     try:
-      result.update( { 'docker_image': structure_config[ 'docker_image' ] } )
+      result.update( { 'docker_image': structure_blueprint_config[ 'docker_image' ] } )
+    except KeyError:
+      pass
+
+    try:
+      result.update( { 'docker_port_map': structure_blueprint_config[ 'docker_port_map' ] } )
     except KeyError:
       pass
 
@@ -96,11 +105,15 @@ class DockerFoundation( Foundation ):
 
   @property
   def can_auto_locate( self ):
-    return self.container_host.state == 'built' and self.structure.auto_build
+    return self.docker_host.state == 'built' and self.structure.auto_build
 
   @property
   def complex( self ):
-    return self.container_host
+    return self.docker_host
+
+  @property
+  def host_ip( self ):
+    return self.docker_host.members.get().networked_ptr.address_set.get( is_primary=True ).ip_address
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
@@ -116,8 +129,8 @@ class DockerFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.site.pk != self.container_host.site.pk:
-      errors[ 'site' ] = 'Site must match the container_host\'s site'
+    if self.site.pk != self.docker_host.site.pk:
+      errors[ 'site' ] = 'Site must match the docker_host\'s site'
 
     if errors:
       raise ValidationError( errors )

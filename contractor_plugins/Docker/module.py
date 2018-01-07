@@ -8,10 +8,11 @@ NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
+    self.host = None
     self.done = False
-    self.container_id = None
+    self.docker_id = None
     self.in_rollback = False
-    self.container_paramaters = {}
+    self.docker_paramaters = {}
 
   @property
   def ready( self ):
@@ -25,7 +26,7 @@ class create( ExternalFunction ):
 
   @property
   def value( self ):
-    return { 'container_id': self.container_id }
+    return { 'docker_id': self.docker_id }
 
   def setup( self, parms ):
     try:
@@ -41,43 +42,57 @@ class create( ExternalFunction ):
     if not NAME_REGEX.match( name ):
       raise ParamaterError( '<internal>', 'invalid name (ie: Foundation Locator)' )
 
-    self.container_paramaters = {
-                                 'name': name,
-                                 'docker_image': docker_image
-                               }
+    port_map = {}
+    try:
+      port_map = self.getScriptValue( 'config', 'docker_port_map' )
+    except ValueError as e:
+      pass
+
+    self.host = parms[ 'host' ]
+
+    self.docker_paramaters = {
+                               'name': name,
+                               'docker_image': docker_image,
+                               'port_map': port_map
+                              }
 
   def toSubcontractor( self ):
+    paramaters = self.docker_paramaters.copy()
+    paramaters.update( { 'host': self.host } )
+
     if self.in_rollback:
-      return ( 'create_rollback', self.container_paramaters )
+      return ( 'create_rollback', paramaters )
     else:
-      return ( 'create', self.container_paramaters )
+      return ( 'create', paramaters )
 
   def fromSubcontractor( self, data ):  # TODO: really if these are missing or false, there is a problem
     if self.in_rollback:
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
       self.done = data.get( 'done', False )
-      self.container_id = data.get( 'id', None )
+      self.docker_id = data.get( 'id', None )
 
   def rollback( self ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.done, self.in_rollback, self.container_id, self.container_paramaters )
+    return ( self.host, self.done, self.in_rollback, self.docker_id, self.docker_paramaters )
 
   def __setstate__( self, state ):
-    self.done = state[0]
-    self.in_rollback = state[1]
-    self.container_id = state[2]
-    self.container_paramaters = state[3]
+    self.host = state[0]
+    self.done = state[1]
+    self.in_rollback = state[2]
+    self.docker_id = state[3]
+    self.docker_paramaters = state[4]
 
 
 # other functions used by the virtualbox foundation
 class destroy( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.container_id = foundation.container_id
+    self.docker_id = foundation.docker_id
     self.name = foundation.locator
+    self.host = foundation.host_ip
     self.done = None
 
   @property
@@ -88,25 +103,27 @@ class destroy( ExternalFunction ):
       return 'Waiting for Container Destruction'
 
   def toSubcontractor( self ):
-    return ( 'destroy', { 'container_id': self.container_id, 'name': self.name } )
+    return ( 'destroy', { 'docker_id': self.docker_id, 'name': self.name, 'host': self.host } )
 
   def fromSubcontractor( self, data ):
     self.done = True
 
   def __getstate__( self ):
-    return ( self.done, self.container_id, self.name )
+    return ( self.done, self.docker_id, self.name, self.host )
 
   def __setstate__( self, state ):
     self.done = state[0]
-    self.container_id = state[1]
+    self.docker_id = state[1]
     self.name = state[2]
+    self.host = state[3]
 
 
 class start_stop( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
   def __init__( self, foundation, state, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.container_id = foundation.container_id
+    self.docker_id = foundation.docker_id
     self.name = foundation.locator
+    self.host = foundation.host_ip
     self.desired_state = state
     self.curent_state = None
     self.sent = False
@@ -125,28 +142,30 @@ class start_stop( ExternalFunction ):  # TODO: need a delay after each power com
     self.curent_state = None
 
   def toSubcontractor( self ):
-    return ( 'start_stop', { 'state': self.desired_state, 'container_id': self.container_id, 'name': self.name, 'sent': self.sent } )
+    return ( 'start_stop', { 'state': self.desired_state, 'docker_id': self.docker_id, 'name': self.name, 'host': self.host, 'sent': self.sent } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
     self.sent = True
 
   def __getstate__( self ):
-    return ( self.container_id, self.desired_state, self.curent_state, self.sent, self.name )
+    return ( self.docker_id, self.name, self.host, self.desired_state, self.curent_state, self.sent )
 
   def __setstate__( self, state ):
-    self.container_id = state[0]
-    self.desired_state = state[1]
-    self.curent_state = state[2]
-    self.sent = state[3]
-    self.name = state[4]
+    self.docker_id = state[0]
+    self.name = state[1]
+    self.host = state[2]
+    self.desired_state = state[3]
+    self.curent_state = state[4]
+    self.sent = state[5]
 
 
 class state( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.container_id = foundation.container_id
+    self.docker_id = foundation.docker_id
     self.name = foundation.locator
+    self.host = foundation.host_ip
     self.state = None
 
   @property
@@ -161,18 +180,19 @@ class state( ExternalFunction ):
     return self.state
 
   def toSubcontractor( self ):
-    return ( 'state', { 'instance_id': self.instance_id, 'name': self.name } )
+    return ( 'state', { 'docker_id': self.docker_id, 'name': self.name, 'host': self.host } )
 
   def fromSubcontractor( self, data ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.instance_id, self.state, self.name )
+    return ( self.docker_id, self.state, self.name, self.host )
 
   def __setstate__( self, state ):
-    self.instance_id = state[0]
+    self.docker_id = state[0]
     self.state = state[1]
     self.name = state[2]
+    self.host = state[3]
 
 
 # plugin exports

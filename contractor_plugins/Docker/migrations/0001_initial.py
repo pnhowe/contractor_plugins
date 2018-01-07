@@ -22,8 +22,8 @@ def load_foundation_blueprints( app, schema_editor ):
   s = Script( name='create-generic-docker', description='Create Docker Container' )
   s.script = """# Create Generic Docker Container
 begin( description="Container Creation" )
-  container = docker.create()
-  foundation.container_id = container[ 'container_id' ]
+  container = docker.create( host=foundation.docker_host )
+  foundation.docker_id = container[ 'docker_id' ]
 end
   """
   s.full_clean()
@@ -35,7 +35,7 @@ end
 begin( description="Instance Destruction" )
   foundation.stop()
   foundation.destroy()
-  foundation.container_id = None
+  foundation.docker_id = None
 end
   """
   s.full_clean()
@@ -65,8 +65,8 @@ class Migration(migrations.Migration):
             name='DockerFoundation',
             fields=[
                 ('foundation_ptr', models.OneToOneField(parent_link=True, to='Building.Foundation', serialize=False, primary_key=True, auto_created=True)),
-                ('container_id', models.CharField(null=True, max_length=64, blank=True)),
-                ('container_host', models.ForeignKey(to='Docker.DockerComplex', on_delete=django.db.models.deletion.PROTECT)),
+                ('docker_id', models.CharField(null=True, max_length=64, blank=True)),
+                ('docker_host', models.ForeignKey(to='Docker.DockerComplex', on_delete=django.db.models.deletion.PROTECT)),
             ],
             bases=('Building.foundation',),
         ),
