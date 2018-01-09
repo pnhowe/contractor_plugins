@@ -48,7 +48,10 @@ class create( ExternalFunction ):
     except ValueError as e:
       pass
 
-    self.host = parms[ 'host' ]
+    try:
+      self.host = self.getScriptValue( 'foundation', 'docker_host' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_host: {0}'.format( e ) )
 
     self.docker_paramaters = {
                                'name': name,

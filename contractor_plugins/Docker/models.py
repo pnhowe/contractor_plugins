@@ -113,7 +113,7 @@ class DockerFoundation( Foundation ):
 
   @property
   def host_ip( self ):
-    return self.docker_host.members.get().networked_ptr.address_set.get( is_primary=True ).ip_address
+    return self.docker_host.members.get().primary_ip
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod

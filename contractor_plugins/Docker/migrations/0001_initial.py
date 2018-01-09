@@ -22,7 +22,7 @@ def load_foundation_blueprints( app, schema_editor ):
   s = Script( name='create-generic-docker', description='Create Docker Container' )
   s.script = """# Create Generic Docker Container
 begin( description="Container Creation" )
-  container = docker.create( host=foundation.docker_host )
+  container = docker.create()
   foundation.docker_id = container[ 'docker_id' ]
 end
   """

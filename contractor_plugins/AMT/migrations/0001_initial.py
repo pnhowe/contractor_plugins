@@ -18,14 +18,6 @@ def load_foundation_blueprints( app, schema_editor ):
   fbp.full_clean()
   fbp.save()
 
-  sbpl = StructureBluePrint.objects.get( name='generic-linux' )
-  sbpl.foundation_blueprint_list.add( fbp )
-  sbpl.save()
-
-  sbpe = StructureBluePrint.objects.get( name='generic-esx' )
-  sbpe.foundation_blueprint_list.add( fbp )
-  sbpe.save()
-
   s = Script( name='create-generic-amt', description='Create AMT Server' )
   s.script = """# Test and Configure Generic AMT Server
 foundation.wait_for_poweroff()
@@ -42,6 +34,13 @@ foundation.power_off()
   s.save()
   BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
 
+  sbpl = StructureBluePrint.objects.get( name='generic-linux' )
+  sbpl.foundation_blueprint_list.add( fbp )
+  sbpl.save()
+
+  sbpe = StructureBluePrint.objects.get( name='generic-esx' )
+  sbpe.foundation_blueprint_list.add( fbp )
+  sbpe.save()
 
 class Migration(migrations.Migration):
 
