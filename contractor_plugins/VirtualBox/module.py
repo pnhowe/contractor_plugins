@@ -12,7 +12,6 @@ MAX_POWER_SET_ATTEMPTS = 5
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.done = False
     self.uuid = None
     self.interface_list = []
     self.in_rollback = False
@@ -20,7 +19,7 @@ class create( ExternalFunction ):
 
   @property
   def ready( self ):
-    if self.done is True:
+    if self.uuid is not None:
       return True
     else:
       if self.in_rollback:
@@ -78,8 +77,8 @@ class create( ExternalFunction ):
                            'cpu_count': cpu_count,
                            'memory_size': memory_size,  # in Meg
                            'disk_list': [ { 'name': 'sda', 'size': 5 } ],  # disk size in G
-                           'interface_list': [ { 'type': 'bridge', 'name': 'enx847beb5.1000', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  name is name of network to attach to, max 4 interfaces
-                           #'interface_list': [ { 'type': 'host', 'name': 'vboxnet0', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  name is name of network to attach to, max 4 interfaces
+                           'interface_list': [ { 'type': 'bridge', 'network': 'enx847beb5.1000', 'name': 'eth0', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  max 4 interfaces
+                           #'interface_list': [ { 'type': 'host', 'network': 'vboxnet0', 'name': 'eth0', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  max 4 interfaces
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
 
@@ -97,22 +96,23 @@ class create( ExternalFunction ):
     if self.in_rollback:
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
-      self.done = data.get( 'done', False )
       self.uuid = data.get( 'uuid', None )
-      self.interface_list = data.get( 'interface_list', [] )
+      self.interface_list = data.get( 'interface_list', [] )  #TODO: seperate the interface_list out to seperate function like vcenter
 
   def rollback( self ):
+    if self.uuid is not None:
+      raise ValueError( 'Unable to Rollback after vm has been created' )
+
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.done, self.in_rollback, self.uuid, self.interface_list, self.vm_paramaters )
+    return ( self.in_rollback, self.uuid, self.interface_list, self.vm_paramaters )
 
   def __setstate__( self, state ):
-    self.done = state[0]
-    self.in_rollback = state[1]
-    self.uuid = state[2]
-    self.interface_list = state[3]
-    self.vm_paramaters = state[4]
+    self.in_rollback = state[0]
+    self.uuid = state[1]
+    self.interface_list = state[2]
+    self.vm_paramaters = state[3]
 
 
 # other functions used by the virtualbox foundation
