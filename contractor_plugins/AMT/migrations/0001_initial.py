@@ -38,9 +38,13 @@ foundation.power_off()
   sbpl.foundation_blueprint_list.add( fbp )
   sbpl.save()
 
-  sbpe = StructureBluePrint.objects.get( name='generic-esx' )
-  sbpe.foundation_blueprint_list.add( fbp )
-  sbpe.save()
+  try:
+    sbpe = StructureBluePrint.objects.get( name='generic-esx' )
+    sbpe.foundation_blueprint_list.add( fbp )
+    sbpe.save()
+  except StructureBluePrint.DoesNotExist:
+    pass
+
 
 class Migration(migrations.Migration):
 
