@@ -9,7 +9,7 @@ from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import _structureConfig
 
-from contractor_plugins.Docker.module import start_stop, state, destroy
+from contractor_plugins.Docker.module import start_stop, state, destroy, map_ports, unmap_ports
 
 cinp = CInP( 'Docker', '0.1' )
 
@@ -30,6 +30,7 @@ class DockerComplex( Complex ):
 
   def newFoundation( self, hostname ):
     foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-docker' ), locator=hostname )
+    foundation.docker_host = self
     foundation.full_clean()
     foundation.save()
 
@@ -44,7 +45,7 @@ class DockerComplex( Complex ):
     port = self.dockerport_set.filter( foundation__isnull=True )[0]
     port.foundation = foundation
     port.foundation_index = 0
-    port.full_clea()
+    port.full_clean()
     port.save()
 
     return foundation
@@ -70,6 +71,7 @@ class DockerComplex( Complex ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=[ 'docker_id' ] )
 class DockerFoundation( Foundation ):
+  docker_host = models.ForeignKey( DockerComplex, on_delete=models.PROTECT )
   docker_id = models.CharField( max_length=64, blank=True, null=True )  # not going to do unique, there could be multiple docker hosts
 
   @staticmethod
@@ -78,7 +80,7 @@ class DockerFoundation( Foundation ):
 
     result[ 'docker_id' ] = ( lambda foundation: foundation.docker_id, None )
     result[ 'docker_host' ] = ( lambda foundation: foundation.host_ip, None )
-    result[ 'docker_port_list' ] = ( lambda foundation: foundation.dockerport_set.all().order_by( 'foundation_index' ), None )
+    # result[ 'docker_port_list' ] = ( lambda foundation: foundation.dockerport_set.all().order_by( 'foundation_index' ), None )
 
     if write_mode is True:
       result[ 'docker_id' ] = ( result[ 'docker_id' ][0], lambda foundation, val: setattr( foundation, 'docker_id', val ) )
@@ -92,6 +94,8 @@ class DockerFoundation( Foundation ):
     result[ 'stop' ] = lambda foundation: ( 'docker', start_stop( foundation, 'stop' ) )
     result[ 'state' ] = lambda foundation: ( 'docker', state( foundation ) )
     result[ 'destroy' ] = lambda foundation: ( 'docker', destroy( foundation ) )
+    result[ 'map_ports' ] = lambda foundation: map_ports( foundation )
+    result[ 'unmap_ports' ] = lambda foundation: unmap_ports( foundation )
 
     return result
 
@@ -112,6 +116,11 @@ class DockerFoundation( Foundation ):
     except KeyError:
       pass
 
+    try:
+      result.update( { 'docker_port_list': structure_blueprint_config[ 'docker_port_list' ] } )
+    except KeyError:
+      pass
+
     return result
 
   @property
@@ -128,15 +137,15 @@ class DockerFoundation( Foundation ):
 
   @property
   def can_auto_locate( self ):
-    return self.complex.state == 'built' and self.structure.auto_build
+    return self.docker_host.state == 'built' and self.structure.auto_build
 
   @property
   def complex( self ):
-    return self.dockerport.complex
+    return self.docker_host
 
   @property
   def host_ip( self ):
-    return self.complex.members.get().primary_ip
+    return self.docker_host.members.get().primary_ip
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
@@ -152,6 +161,9 @@ class DockerFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
+    if self.site.pk != self.docker_host.site.pk:
+      errors[ 'site' ] = 'Site must match the docker_host\'s site'
+
     if errors:
       raise ValidationError( errors )
 
@@ -161,10 +173,10 @@ class DockerFoundation( Foundation ):
 
 @cinp.model()
 class DockerPort( models.Model ):
-  complex = models.ForeignKey( DockerComplex, on_delete=models.PROTECT )
+  complex = models.ForeignKey( DockerComplex, on_delete=models.CASCADE )
   port = models.IntegerField()
   address_offset = models.IntegerField()
-  foundation = models.ForeignKey( DockerFoundation, on_delete=models.PROTECT, blank=True, null=True )
+  foundation = models.ForeignKey( DockerFoundation, on_delete=models.SET_NULL, blank=True, null=True )
   foundation_index = models.IntegerField( default=0 )
   updated = models.DateTimeField( editable=False, auto_now=True )
   created = models.DateTimeField( editable=False, auto_now_add=True )
@@ -192,8 +204,8 @@ class DockerPort( models.Model ):
     if self.address_offset > 100 and self.address_offset < 0:
       errors[ 'address_offset' ] = 'must be from 0 to 100'
 
-    if self.foundation is not None and self.complex.site.pk != self.foundation.site.pk:
-      errors[ 'foundation' ] = 'Foundation and Complex Site\'s must match'
+    if self.foundation is not None and self.complex != self.foundation.docker_host:
+      errors[ 'foundation' ] = 'Port\'s complex does not match the Foundation\'s complex'
 
     if errors:
       raise ValidationError( errors )

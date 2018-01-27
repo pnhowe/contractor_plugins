@@ -22,6 +22,7 @@ def load_foundation_blueprints( app, schema_editor ):
   s = Script( name='create-generic-docker', description='Create Docker Container' )
   s.script = """# Create Generic Docker Container
 begin( description="Container Creation" )
+  foundation.map_ports( port_list=config.docker_port_list )
   container = docker.create()
   foundation.docker_id = container[ 'docker_id' ]
 end
@@ -32,10 +33,11 @@ end
 
   s = Script( name='destroy-generic-docker', description='Destroy Docker Container' )
   s.script = """# Destory Generic Docker Container
-begin( description="Instance Destruction" )
+begin( description="Container Destruction" )
   foundation.stop()
   foundation.destroy()
   foundation.docker_id = None
+  foundation.unmap_ports()
 end
   """
   s.full_clean()
@@ -57,29 +59,30 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='DockerComplex',
             fields=[
-                ('complex_ptr', models.OneToOneField(to='Building.Complex', parent_link=True, auto_created=True, primary_key=True, serialize=False)),
+                ('complex_ptr', models.OneToOneField(to='Building.Complex', serialize=False, auto_created=True, parent_link=True, primary_key=True)),
             ],
             bases=('Building.complex',),
         ),
         migrations.CreateModel(
             name='DockerFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(to='Building.Foundation', parent_link=True, auto_created=True, primary_key=True, serialize=False)),
-                ('docker_id', models.CharField(max_length=64, blank=True, null=True)),
+                ('foundation_ptr', models.OneToOneField(to='Building.Foundation', serialize=False, auto_created=True, parent_link=True, primary_key=True)),
+                ('docker_id', models.CharField(null=True, max_length=64, blank=True)),
+                ('docker_host', models.ForeignKey(to='Docker.DockerComplex', on_delete=django.db.models.deletion.PROTECT)),
             ],
             bases=('Building.foundation',),
         ),
         migrations.CreateModel(
             name='DockerPort',
             fields=[
-                ('id', models.AutoField(verbose_name='ID', primary_key=True, serialize=False, auto_created=True)),
+                ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True, serialize=False)),
                 ('port', models.IntegerField()),
                 ('address_offset', models.IntegerField()),
                 ('foundation_index', models.IntegerField(default=0)),
                 ('updated', models.DateTimeField(auto_now=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
-                ('complex', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='Docker.DockerComplex')),
-                ('foundation', models.ForeignKey(blank=True, on_delete=django.db.models.deletion.PROTECT, null=True, to='Docker.DockerFoundation')),
+                ('complex', models.ForeignKey(to='Docker.DockerComplex', on_delete=django.db.models.deletion.CASCADE)),
+                ('foundation', models.ForeignKey(to='Docker.DockerFoundation', on_delete=django.db.models.deletion.SET_NULL, blank=True, null=True)),
             ],
         ),
         migrations.AlterUniqueTogether(
