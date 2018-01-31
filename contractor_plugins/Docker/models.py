@@ -42,12 +42,6 @@ class DockerComplex( Complex ):
     fni.full_clean()
     fni.save()
 
-    port = self.dockerport_set.filter( foundation__isnull=True )[0]
-    port.foundation = foundation
-    port.foundation_index = 0
-    port.full_clean()
-    port.save()
-
     return foundation
 
   @cinp.check_auth()
@@ -80,7 +74,6 @@ class DockerFoundation( Foundation ):
 
     result[ 'docker_id' ] = ( lambda foundation: foundation.docker_id, None )
     result[ 'docker_host' ] = ( lambda foundation: foundation.host_ip, None )
-    # result[ 'docker_port_list' ] = ( lambda foundation: foundation.dockerport_set.all().order_by( 'foundation_index' ), None )
 
     if write_mode is True:
       result[ 'docker_id' ] = ( result[ 'docker_id' ][0], lambda foundation, val: setattr( foundation, 'docker_id', val ) )
