@@ -34,14 +34,12 @@ foundation.power_off()
   s.save()
   BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
 
-  sbpl = StructureBluePrint.objects.get( name='generic-linux' )
-  sbpl.foundation_blueprint_list.add( fbp )
-  sbpl.save()
+  sbp = StructureBluePrint.objects.get( name='generic-linux' )
+  sbp.foundation_blueprint_list.add( fbp )
 
   try:
-    sbpe = StructureBluePrint.objects.get( name='generic-esx' )
-    sbpe.foundation_blueprint_list.add( fbp )
-    sbpe.save()
+    sbp = StructureBluePrint.objects.get( name='generic-esx' )
+    sbp.foundation_blueprint_list.add( fbp )
   except StructureBluePrint.DoesNotExist:
     pass
 

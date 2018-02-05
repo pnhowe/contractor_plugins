@@ -43,9 +43,8 @@ end
   s.save()
   BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
 
-  sbpl = StructureBluePrint.objects.get( name='generic-linux' )
-  sbpl.foundation_blueprint_list.add( fbp )
-  sbpl.save()
+  sbp = StructureBluePrint.objects.get( name='generic-linux' )
+  sbp.foundation_blueprint_list.add( fbp )
 
 
 class Migration(migrations.Migration):

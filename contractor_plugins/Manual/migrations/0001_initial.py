@@ -19,13 +19,11 @@ def load_foundation_blueprints( app, schema_editor ):
   fbp.full_clean()
   fbp.save()
 
-  sbpl = StructureBluePrint.objects.get( name='generic-linux' )
-  sbpl.foundation_blueprint_list.add( fbp )
-  sbpl.save()
+  sbp = StructureBluePrint.objects.get( name='generic-linux' )
+  sbp.foundation_blueprint_list.add( fbp )
 
-  sbpl = StructureBluePrint.objects.get( name='generic-manual-structure' )
-  sbpl.foundation_blueprint_list.add( fbp )
-  sbpl.save()
+  sbp = StructureBluePrint.objects.get( name='generic-manual-structure' )
+  sbp.foundation_blueprint_list.add( fbp )
 
   s = Script( name='create-generic-manual', description='Create Manual Server' )
   s.script = """# Test and Configure Generic Manual Server
