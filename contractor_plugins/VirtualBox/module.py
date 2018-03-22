@@ -97,7 +97,7 @@ class create( ExternalFunction ):
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
       self.uuid = data.get( 'uuid', None )
-      self.interface_list = data.get( 'interface_list', [] )  #TODO: seperate the interface_list out to seperate function like vcenter
+      self.interface_list = data.get( 'interface_list', [] )  # TODO: seperate the interface_list out to seperate function like vcenter
 
   def rollback( self ):
     if self.uuid is not None:
