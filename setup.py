@@ -19,11 +19,12 @@ class build( build_py ):
           continue
         self.build_module( module, module_file, package )
 
-setup( name='contractor_plugins',
+setup(
+       name='contractor_plugins',
        version='1.0',
-       description='Contractor Core Plugins',
+       description='Core Plugins for Contractor',
        author='Peter Howe',
        author_email='pnhowe@gmail.com',
        packages=find_packages(),
        cmdclass={ 'build_py': build }
-     )
+      )
