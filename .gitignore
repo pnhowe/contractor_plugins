@@ -2,9 +2,10 @@ __pycache__
 *.pyc
 /build
 dpkg
+respkg
 
-*.sqlite3
+*.egg-info
+*.respkg
 htmlcov
 .coverage
 .cache
-

@@ -1,5 +1,5 @@
 #!/bin/sh
-# postinst script for contractor
+# postinst script for contractor_plugins
 #
 # see: dh_installdeb(1)
 

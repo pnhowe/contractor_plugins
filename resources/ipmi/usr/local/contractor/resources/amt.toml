@@ -1,0 +1,21 @@
+sflinks = [ [ 'linux-base', 'amt-base' ], [ 'esx-base', 'amt-base' ] ]
+
+[ foundation.amt-base ]
+  description = 'Base AMT(Intell vPro) VM'
+  scripts = { 'create' = 'amt-create', 'destroy' = 'amt-destroy' }
+  foundation_types = [ 'AMT' ]
+  config_values = {}
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+
+[ script.amt-create ]
+  description = 'Create AMT Server'
+  script = """# Test and Configure AMT Server
+foundation.wait_for_poweroff()
+"""
+
+[ script.amt-destroy ]
+  description = 'Destroy AMT Server'
+  script = """# Decommission AMT Server
+foundation.power_off()
+"""

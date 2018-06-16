@@ -1,0 +1,30 @@
+sflinks = [ [ 'linux-base', 'docker-container-base' ] ]
+
+[ foundation.docker-continaer-base ]
+  description = 'Base VCenter VM'
+  scripts = { 'create' = 'docker-container-create', 'destroy' = 'docker-container-destroy' }
+  foundation_types = [ 'Docker' ]
+  config_values = {}
+  template = {}
+  physical_interface_names = []
+
+[ script.docker-container-create ]
+  description = 'Create Docker Container'
+  script = """# Create Docker Container
+begin( description='Docker Container Creation' )
+  foundation.map_ports( port_list=config.docker_port_list )
+  container = docker.create()
+  foundation.docker_id = container[ 'docker_id' ]
+end
+"""
+
+[ script.docker-container-destroy ]
+  description = 'Destroy Docker Container'
+  script = """# Destory Docker Container
+begin( description='Docker Container Destruction' )
+  foundation.stop()
+  foundation.destroy()
+  foundation.docker_id = None
+  foundation.unmap_ports()
+end
+"""

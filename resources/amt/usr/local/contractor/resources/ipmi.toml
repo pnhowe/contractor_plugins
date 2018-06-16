@@ -1,0 +1,21 @@
+sflinks = [ [ 'linux-base', 'ipmi-base' ], [ 'esx-base', 'ipmi-base' ] ]
+
+[ foundation.ipmi-base ]
+  description = 'Base IPMI VM'
+  scripts = { 'create' = 'ipmi-create', 'destroy' = 'ipmi-destroy' }
+  foundation_types = [ 'IPMI' ]
+  config_values = {}
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+
+[ script.ipmi-create ]
+  description = 'Create IPMI Server'
+  script = """# Test and Configure IPMI Server
+foundation.wait_for_poweroff()
+"""
+
+[ script.ipmi-destroy ]
+  description = 'Destroy IPMI Server'
+  script = """# Decommission IPMI Server
+foundation.power_off()
+"""

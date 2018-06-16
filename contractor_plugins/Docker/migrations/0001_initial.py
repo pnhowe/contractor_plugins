@@ -5,50 +5,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def load_foundation_blueprints( app, schema_editor ):
-  FoundationBluePrint = app.get_model( 'BluePrint', 'FoundationBluePrint' )
-  StructureBluePrint = app.get_model( 'BluePrint', 'StructureBluePrint' )
-  Script = app.get_model( 'BluePrint', 'Script' )
-  BluePrintScript = app.get_model( 'BluePrint', 'BluePrintScript' )
-
-  fbp = FoundationBluePrint( name='generic-docker', description='Generic Docker Container' )
-  fbp.config_values = {}
-  fbp.template = {}
-  fbp.foundation_type_list = [ 'Docker' ]
-  fbp.physical_interface_names = []
-  fbp.full_clean()
-  fbp.save()
-
-  s = Script( name='create-generic-docker', description='Create Docker Container' )
-  s.script = """# Create Generic Docker Container
-begin( description="Container Creation" )
-  foundation.map_ports( port_list=config.docker_port_list )
-  container = docker.create()
-  foundation.docker_id = container[ 'docker_id' ]
-end
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='create' ).save()
-
-  s = Script( name='destroy-generic-docker', description='Destroy Docker Container' )
-  s.script = """# Destory Generic Docker Container
-begin( description="Container Destruction" )
-  foundation.stop()
-  foundation.destroy()
-  foundation.docker_id = None
-  foundation.unmap_ports()
-end
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
-
-  sbp = StructureBluePrint.objects.get( name='generic-linux' )
-  sbp.foundation_blueprint_list.add( fbp )
-  sbp.save()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -89,5 +45,4 @@ class Migration(migrations.Migration):
             name='dockerport',
             unique_together=set([('foundation', 'foundation_index')]),
         ),
-        migrations.RunPython( load_foundation_blueprints ),
     ]

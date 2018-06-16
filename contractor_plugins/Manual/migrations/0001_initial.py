@@ -5,59 +5,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def load_foundation_blueprints( app, schema_editor ):
-  FoundationBluePrint = app.get_model( 'BluePrint', 'FoundationBluePrint' )
-  StructureBluePrint = app.get_model( 'BluePrint', 'StructureBluePrint' )
-  Script = app.get_model( 'BluePrint', 'Script' )
-  BluePrintScript = app.get_model( 'BluePrint', 'BluePrintScript' )
-
-  fbp = FoundationBluePrint( name='generic-manual', description='Generic Manual(Non-IPMI/DRAC/Blade/etc) Server' )
-  fbp.config_values = {}
-  fbp.template = {}
-  fbp.foundation_type_list = [ 'Manual', 'ManualComplex' ]
-  fbp.physical_interface_names = [ 'eth0' ]
-  fbp.full_clean()
-  fbp.save()
-
-  sbp = StructureBluePrint.objects.get( name='generic-linux' )
-  sbp.foundation_blueprint_list.add( fbp )
-
-  sbp = StructureBluePrint.objects.get( name='generic-manual-structure' )
-  sbp.foundation_blueprint_list.add( fbp )
-
-  s = Script( name='create-generic-manual', description='Create Manual Server' )
-  s.script = """# Test and Configure Generic Manual Server
-pause( msg='Resume when Server is Powered Off' )
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='create' ).save()
-
-  s = Script( name='destroy-generic-manual', description='Destroy Manual Server' )
-  s.script = """# Decommission Generic Manual Server
-pause( msg='Resume script when Server is Off' )
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
-
-  s = Script( name='utility-generic-manual', description='Utility Script for Manual Server' )
-  s.script = """# Utility Script for Generic Manual Server
-pause( msg='Do the thing, then Resume' )
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='utility' ).save()
-
-  s = Script( name='utility2-generic-manual', description='Utility2 Script for Manual Server' )
-  s.script = """# Utility Script for Generic Manual Server
-pause( msg='Do the other thing, then Resume' )
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='utility2' ).save()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -87,5 +34,4 @@ class Migration(migrations.Migration):
             ],
             bases=('Building.foundation',),
         ),
-        migrations.RunPython( load_foundation_blueprints ),
     ]

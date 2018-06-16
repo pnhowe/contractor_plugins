@@ -5,48 +5,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def load_foundation_blueprints( app, schema_editor ):
-  FoundationBluePrint = app.get_model( 'BluePrint', 'FoundationBluePrint' )
-  StructureBluePrint = app.get_model( 'BluePrint', 'StructureBluePrint' )
-  Script = app.get_model( 'BluePrint', 'Script' )
-  BluePrintScript = app.get_model( 'BluePrint', 'BluePrintScript' )
-
-  fbp = FoundationBluePrint( name='generic-virtualbox', description='Generic VirtualBox VM' )
-  fbp.config_values = { 'memory_size': 512, 'cpu_count': 1 }
-  fbp.template = {}
-  fbp.foundation_type_list = [ 'VirtualBox' ]
-  fbp.physical_interface_names = [ 'eth0' ]
-  fbp.full_clean()
-  fbp.save()
-
-  s = Script( name='create-generic-virtualbox', description='Create Virtual Box VM' )
-  s.script = """# Create Generic VirualBox VM
-begin( description="VM Creation" )
-  vm = virtualbox.create()
-  foundation.virtualbox_uuid = vm[ 'uuid' ]
-  foundation.set_interface_macs( interface_list=vm[ 'interface_list' ] )
-end
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='create' ).save()
-
-  s = Script( name='destroy-generic-virtualbox', description='Destroy Virtual Box VM' )
-  s.script = """# Destory Generic VirualBox VM
-begin( description="VM Destruction" )
-  foundation.power_off()
-  foundation.destroy()
-  foundation.virtualbox_uuid = None
-end
-  """
-  s.full_clean()
-  s.save()
-  BluePrintScript( blueprint=fbp, script=s, name='destroy' ).save()
-
-  sbp = StructureBluePrint.objects.get( name='generic-linux' )
-  sbp.foundation_blueprint_list.add( fbp )
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -70,5 +28,4 @@ class Migration(migrations.Migration):
             ],
             bases=('Building.foundation',),
         ),
-        migrations.RunPython( load_foundation_blueprints ),
     ]
