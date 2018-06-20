@@ -58,7 +58,7 @@ network --bootproto=static --ip={{ network.eth0.ip_address }} --netmask={{ netwo
   description = 'Base VCenter VM'
   scripts = { 'create' = 'vcenter-vm-create', 'destroy' = 'vcenter-vm-destroy' }
   foundation_types = [ 'VCenter' ]
-  config_values = { 'memory_size': 512, 'cpu_count': 1 }
+  config_values = { 'memory_size' = 512, 'cpu_count' = 1 }
   template = {}
   physical_interface_names = []
 

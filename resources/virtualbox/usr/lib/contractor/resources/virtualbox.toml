@@ -4,7 +4,7 @@ sflinks = [ [ 'linux-base', 'virtualbox-base' ], [ 'esx-base', 'virtualbox-base'
   description = 'Base IPMI VM'
   scripts = { 'create' = 'virtualbox-vm-create', 'destroy' = 'virtualbox-vm-destroy' }
   foundation_types = [ 'VirtualBox' ]
-  config_values = { 'memory_size': 512, 'cpu_count': 1 }
+  config_values = { 'memory_size' = 512, 'cpu_count' = 1 }
   template = {}
   physical_interface_names = [ 'eth0' ]
 
