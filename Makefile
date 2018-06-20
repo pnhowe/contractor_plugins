@@ -1,6 +1,8 @@
 all:
+	./setup.py build
 
 install:
+	./setup.py install --root $(DESTDIR) --install-purelib=/usr/lib/python3/dist-packages/ --prefix=/usr --no-compile -O0
 
 test-requires:
 	python3-pytest python3-pytest-cov python3-pytest-django python3-pytest-mock
@@ -9,6 +11,9 @@ test:
 	py.test-3 -x --cov=contractor_plugins --cov-report html --cov-report term -vv contractor_plugins
 
 clean:
+	./setup.py clean
+	$(RM) -fr build
+	$(RM) -f dpkg
 
 .PHONY:: test-requires test clean
 
