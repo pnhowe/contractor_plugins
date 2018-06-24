@@ -11,7 +11,7 @@ from contractor.BluePrint.models import FoundationBluePrint
 
 from contractor_plugins.Vcenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
-cinp = CInP( 'Vcenter', '0.1' )
+cinp = CInP( 'VCenter', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'vcenterfoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'vcentercomplex' )
@@ -46,7 +46,7 @@ class VcenterComplex( Complex ):
 
   @property
   def type( self ):
-    return 'vcenter'
+    return 'VCenter'
 
   def newFoundation( self, hostname ):
     foundation = VcenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-vcenter' ), locator=hostname )
@@ -133,11 +133,11 @@ class VcenterFoundation( Foundation ):
 
   @property
   def type( self ):
-    return 'vcenter'
+    return 'VCenter'
 
   @property
   def class_list( self ):
-    return [ 'VM', 'Vcenter' ]
+    return [ 'VM', 'VCenter' ]
 
   @property
   def can_auto_locate( self ):

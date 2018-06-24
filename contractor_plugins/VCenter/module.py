@@ -7,10 +7,7 @@ from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
 NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
 
-
-def _interface_list( foundation_id ):  # valid range 00:50:56:00:00:00 - 00:50:56:3F:00:00
-  mac = '005056{0:06x}'.format( ( 4 * foundation_id ) )  # leaving room for 4 interfaces per foundation
-  return [ { 'name': 'eth0', 'network': 'VM Network', 'type': 'VirtualE1000', 'mac': ':'.join( mac[ i:i + 2 ] for i in range( 0, 12, 2 ) ) } ]
+INTERFACE_NAME_LIST = [ 'eth0' ]
 
 
 # exported functions
@@ -36,14 +33,15 @@ class create( ExternalFunction ):
     return self.uuid
 
   def setup( self, parms ):
-    try:
-      foundation_id = self.getScriptValue( 'foundation', 'id' )
-    except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation id: {0}'.format( e ) )
+    interface_list = []
+    counter = 0
+    for name in INTERFACE_NAME_LIST:
+      interface_list.append( { 'name': name, 'network': 'VM Network', 'type': 'VirtualE1000' } )
+      counter += 1
 
     self.vm_paramaters = {  # the defaults
                            'disk_list': [ { 'size': 10, 'name': 'sda', 'allocate': 'thin' } ],  # disk size in G
-                           'interface_list': _interface_list( foundation_id ),
+                           'interface_list': interface_list,
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
 
@@ -541,42 +539,40 @@ class get_interface_map( ExternalFunction ):
                                     'username': foundation.vcenter_host.vcenter_username,
                                     'password': foundation.vcenter_host.vcenter_password,
                                   }
-    self.interface_map = None
+    self.interface_list = None
 
   @property
   def ready( self ):
-    if self.interface_map is not None:
+    if self.interface_list is not None:
       return True
     else:
       return 'Waiting for Interface Map'
 
   def setup( self, parms ):
-    try:
-      foundation_id = self.getScriptValue( 'foundation', 'id' )
-    except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation id: {0}'.format( e ) )
-
-    self.interface_list = _interface_list( foundation_id )
+    pass
 
   @property
   def value( self ):
-    return self.interface_map
+    result = {}
+    for i in range( 0, min( len( INTERFACE_NAME_LIST ), len( self.interface_list ) ) ):
+      result[ INTERFACE_NAME_LIST[ i ] ] = self.interface_list[ i ]
+
+    return result
 
   def toSubcontractor( self ):
-    return ( 'get_interface_map', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'interface_list': self.interface_list } )
+    return ( 'get_interface_map', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
-    self.interface_map = data[ 'interface_map' ]
+    self.interface_list = data[ 'interface_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.interface_list, self.interface_map )
+    return ( self.connection_paramaters, self.uuid, self.name, self.interface_list )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.uuid = state[1]
     self.name = state[2]
     self.interface_list = state[3]
-    self.interface_map = state[4]
 
 
 class set_interface_macs():
