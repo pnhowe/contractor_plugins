@@ -30,6 +30,7 @@ respkg:
 	cd resources && respkg -b ../contractor-plugins-manual_0.0.respkg     -n contractor-plugins-manual     -e 0.0 -c "Contractor Plugins - Manual"     -t load_manual.sh     -d manual     -s contractor-os-base
 	cd resources && respkg -b ../contractor-plugins-vcenter_0.0.respkg    -n contractor-plugins-vcenter    -e 0.0 -c "Contractor Plugins - Vcenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
 	cd resources && respkg -b ../contractor-plugins-virtualbox_0.0.respkg -n contractor-plugins-virtualbox -e 0.0 -c "Contractor Plugins - VirtualBox" -t load_virtualbox.sh -d virtualbox -s contractor-os-base
+	cd resources && respkg -b ../contractor-plugins-iputils_0.0.respkg    -n contractor-plugins-ipuils     -e 0.0 -c "Contractor Plugins - IpUtils"    -t load_iputils.sh    -d iputils
 	touch respkg
 
 respkg-file:
