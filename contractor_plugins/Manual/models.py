@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 
 from cinp.orm_django import DjangoCInP as CInP
 
-from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST, FoundationNetworkInterface
+from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 
@@ -33,12 +33,10 @@ class ManualComplex( Complex ):
     foundation.save()
 
     iface = RealNetworkInterface( name='eth0', is_provisioning=True )
+    iface.foundation = foundation
+    iface.physical_location = 'eth0'
     iface.full_clean()
     iface.save()
-
-    fni = FoundationNetworkInterface( foundation=foundation, interface=iface, physical_location='eth0' )
-    fni.full_clean()
-    fni.save()
 
     return foundation
 

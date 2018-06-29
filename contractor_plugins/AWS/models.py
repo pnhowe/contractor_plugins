@@ -66,7 +66,10 @@ class AWSEC2Foundation( Foundation ):
 
   @property
   def can_auto_locate( self ):
-    return self.structure.auto_build
+    try:
+      return self.structure.auto_build
+    except AttributeError:
+      return False
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
