@@ -9,20 +9,20 @@ from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 
-from contractor_plugins.Vcenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
+from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
 cinp = CInP( 'VCenter', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'vcenterfoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'vcentercomplex' )
-RUNNER_MODULE_LIST.append( 'contractor_plugins.Vcenter.module' )
+RUNNER_MODULE_LIST.append( 'contractor_plugins.VCenter.module' )
 
 datacenter_name_regex = re.compile( '^[a-zA-Z0-9][a-zA-Z0-9_\-]*$' )
 cluster_name_regex = re.compile( '^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*$' )
 
 
 @cinp.model( property_list=( 'state', 'type' ) )
-class VcenterComplex( Complex ):
+class VCenterComplex( Complex ):
   vcenter_host = models.ForeignKey( Structure, help_text='set to VCenter or the ESX host, if ESX host, leave members empty' )  # no need for unique, the same vcenter_host can be used for multiple clusters
   vcenter_username = models.CharField( max_length=50 )
   vcenter_password = models.CharField( max_length=50 )
@@ -49,7 +49,7 @@ class VcenterComplex( Complex ):
     return 'VCenter'
 
   def newFoundation( self, hostname ):
-    foundation = VcenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-vcenter' ), locator=hostname )
+    foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-vcenter' ), locator=hostname )
     foundation.vcenter_host = self
     foundation.full_clean()
     foundation.save()
@@ -81,17 +81,17 @@ class VcenterComplex( Complex ):
       raise ValidationError( errors )
 
   def __str__( self ):
-    return 'VcenterComplex {0}'.format( self.pk )
+    return 'VCenterComplex {0}'.format( self.pk )
 
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
-class VcenterFoundation( Foundation ):
-  vcenter_host = models.ForeignKey( VcenterComplex, on_delete=models.PROTECT )
+class VCenterFoundation( Foundation ):
+  vcenter_host = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
   vcenter_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of vcenter clusters
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
-    result = super( VcenterFoundation, VcenterFoundation ).getTscriptValues( write_mode )
+    result = super( VCenterFoundation, VCenterFoundation ).getTscriptValues( write_mode )
 
     result[ 'vcenter_host' ] = ( lambda foundation: foundation.host_ip, None )
     result[ 'vcenter_username' ] = ( lambda foundation: foundation.vcenter_host.vcenter_username, None )
@@ -108,7 +108,7 @@ class VcenterFoundation( Foundation ):
 
   @staticmethod
   def getTscriptFunctions():
-    result = super( VcenterFoundation, VcenterFoundation ).getTscriptFunctions()
+    result = super( VCenterFoundation, VCenterFoundation ).getTscriptFunctions()
     result[ 'power_on' ] = lambda foundation: ( 'vcenter', set_power( foundation, 'on' ) )
     result[ 'power_off' ] = lambda foundation: ( 'vcenter', set_power( foundation, 'off' ) )
     result[ 'power_state' ] = lambda foundation: ( 'vcenter', power_state( foundation ) )
@@ -155,7 +155,7 @@ class VcenterFoundation( Foundation ):
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
   def filter_site( site ):
-    return VcenterFoundation.objects.filter( site=site )
+    return VCenterFoundation.objects.filter( site=site )
 
   @cinp.check_auth()
   @staticmethod
@@ -170,4 +170,4 @@ class VcenterFoundation( Foundation ):
       raise ValidationError( errors )
 
   def __str__( self ):
-    return 'VcenterFoundation {0}'.format( self.pk )
+    return 'VCenterFoundation {0}'.format( self.pk )

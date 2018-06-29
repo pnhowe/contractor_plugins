@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='VcenterComplex',
+            name='VCenterComplex',
             fields=[
                 ('complex_ptr', models.OneToOneField(to='Building.Complex', auto_created=True, primary_key=True, parent_link=True, serialize=False)),
                 ('vcenter_username', models.CharField(max_length=50)),
@@ -25,11 +25,11 @@ class Migration(migrations.Migration):
             bases=('Building.complex',),
         ),
         migrations.CreateModel(
-            name='VcenterFoundation',
+            name='VCenterFoundation',
             fields=[
                 ('foundation_ptr', models.OneToOneField(to='Building.Foundation', auto_created=True, primary_key=True, parent_link=True, serialize=False)),
                 ('vcenter_uuid', models.CharField(null=True, max_length=36, blank=True)),
-                ('vcenter_host', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='Vcenter.VcenterComplex')),
+                ('vcenter_host', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='VCenter.VCenterComplex')),
             ],
             bases=('Building.foundation',),
         ),

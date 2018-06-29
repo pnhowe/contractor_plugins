@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('Building', '0001_initial'),
-        ('Vcenter', '0001_initial'),
     ]
 
     operations = [

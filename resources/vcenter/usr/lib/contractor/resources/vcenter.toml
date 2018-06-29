@@ -67,7 +67,7 @@ network --bootproto=static --ip={{ network.eth0.ip_address }} --netmask={{ netwo
   script = """# Create VCenter VM
 begin( description='VM Creation' )
   host_list = vcenter.host_list( min_memory=1024 )
-  datastore_list = vcenter.datastore_list( host=host_list[0], min_free_space=5' )
+  datastore_list = vcenter.datastore_list( host=host_list[0], min_free_space=5 )
   vm_uuid = vcenter.create( host=host_list[0], datastore=datastore_list[0] )
   foundation.vcenter_uuid = vm_uuid
   interface_map = foundation.get_interface_map()
