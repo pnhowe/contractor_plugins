@@ -27,7 +27,7 @@ class ManualComplex( Complex ):
     return 'Manual'
 
   def newFoundation( self, hostname ):
-    foundation = ManualComplexedFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-manual' ), locator=hostname )
+    foundation = ManualComplexedFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='manual-foundation-base' ), locator=hostname )
     foundation.complex_host = self
     foundation.full_clean()
     foundation.save()

@@ -29,7 +29,7 @@ class DockerComplex( Complex ):
     return 'Docker'
 
   def newFoundation( self, hostname ):
-    foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-docker' ), locator=hostname )
+    foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
     foundation.docker_host = self
     foundation.full_clean()
     foundation.save()

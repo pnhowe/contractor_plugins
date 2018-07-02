@@ -200,7 +200,7 @@ class set_interface_macs():
   def __call__( self, interface_list ):
     for interface in interface_list:
       try:
-        iface = self.foundation.interfaces.get( name=interface[ 'name' ] )
+        iface = self.foundation.networkinterface_set.get( name=interface[ 'name' ] )
       except ObjectDoesNotExist:
         raise ParamaterError( 'interface_list', 'interface named "{0}" not found'.format( interface[ 'name' ] ) )
 

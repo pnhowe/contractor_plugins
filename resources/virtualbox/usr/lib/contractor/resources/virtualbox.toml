@@ -1,7 +1,7 @@
-sflinks = [ [ 'linux-base', 'virtualbox-base' ], [ 'esx-base', 'virtualbox-base' ] ]
+sflinks = [ [ 'linux-base', 'virtualbox-vm-base' ], [ 'esx-base', 'virtualbox-vm-base' ] ]
 
-[ foundation.ipmi-base ]
-  description = 'Base IPMI VM'
+[ foundation.virtualbox-vm-base ]
+  description = 'Base VirtualBox VM'
   scripts = { 'create' = 'virtualbox-vm-create', 'destroy' = 'virtualbox-vm-destroy' }
   foundation_types = [ 'VirtualBox' ]
   config_values = { 'memory_size' = 512, 'cpu_count' = 1 }
@@ -9,7 +9,7 @@ sflinks = [ [ 'linux-base', 'virtualbox-base' ], [ 'esx-base', 'virtualbox-base'
   physical_interface_names = [ 'eth0' ]
 
 [ script.virtualbox-vm-create ]
-  description = 'Create IPMI Server'
+  description = 'Create VirtualBox VM'
   script = """# Create VirualBox VM
 begin( description='VM Creation' )
   vm = virtualbox.create()

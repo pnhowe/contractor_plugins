@@ -49,7 +49,7 @@ class VCenterComplex( Complex ):
     return 'VCenter'
 
   def newFoundation( self, hostname ):
-    foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-vcenter' ), locator=hostname )
+    foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
     foundation.vcenter_host = self
     foundation.full_clean()
     foundation.save()

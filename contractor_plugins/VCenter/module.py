@@ -48,7 +48,7 @@ class create( ExternalFunction ):
     try:
       self.connection_paramaters[ 'host' ] = self.getScriptValue( 'foundation', 'vcenter_host' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
 
     try:
       self.connection_paramaters[ 'username' ] = self.getScriptValue( 'foundation', 'vcenter_username' )
@@ -156,7 +156,7 @@ class host_list( ExternalFunction ):
     try:
       self.connection_paramaters[ 'host' ] = self.getScriptValue( 'foundation', 'vcenter_host' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
 
     try:
       self.connection_paramaters[ 'username' ] = self.getScriptValue( 'foundation', 'vcenter_username' )
@@ -234,7 +234,7 @@ class create_datastore( ExternalFunction ):
       # self.connection_paramaters[ 'host' ] = self.getScriptValue( 'foundation', 'vcenter_host' )
       self.connection_paramaters[ 'host' ] = self.getScriptValue( 'config', 'vcenter_host' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
 
     try:
       # self.connection_paramaters[ 'username' ] = self.getScriptValue( 'foundation', 'vcenter_username' )
@@ -313,7 +313,7 @@ class datastore_list( ExternalFunction ):
     try:
       self.connection_paramaters[ 'host' ] = self.getScriptValue( 'foundation', 'vcenter_host' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
 
     try:
       self.connection_paramaters[ 'username' ] = self.getScriptValue( 'foundation', 'vcenter_username' )
@@ -584,7 +584,7 @@ class set_interface_macs():
     for name in interface_map:
       mac = interface_map[ name ]
       try:
-        iface = self.foundation.interfaces.get( name=name )
+        iface = self.foundation.networkinterface_set.get( name=name )
       except ObjectDoesNotExist:
         raise ParamaterError( 'interface_map', 'interface named "{0}" not found'.format( name ) )
 

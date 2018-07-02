@@ -28,7 +28,7 @@ class VirtualBoxComplex( Complex ):
     return 'VirtualBox'
 
   def newFoundation( self, hostname ):
-    foundation = VirtualBoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='generic-virtualbox' ), locator=hostname )
+    foundation = VirtualBoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
     foundation.virtualbox_host = self
     foundation.full_clean()
     foundation.save()
