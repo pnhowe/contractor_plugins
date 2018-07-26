@@ -72,7 +72,7 @@ class create( ExternalFunction ):
 
     try:
       self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
-    except KeyError:
+    except KeyError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
     try:
