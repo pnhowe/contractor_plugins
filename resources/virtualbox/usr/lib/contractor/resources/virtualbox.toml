@@ -1,0 +1,29 @@
+sflinks = [ [ 'linux-base', 'virtualbox-vm-base' ], [ 'esx-base', 'virtualbox-vm-base' ] ]
+
+[ foundation.virtualbox-vm-base ]
+  description = 'Base VirtualBox VM'
+  scripts = { 'create' = 'virtualbox-vm-create', 'destroy' = 'virtualbox-vm-destroy' }
+  foundation_types = [ 'VirtualBox' ]
+  config_values = { 'memory_size' = 512, 'cpu_count' = 1 }
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+
+[ script.virtualbox-vm-create ]
+  description = 'Create VirtualBox VM'
+  script = """# Create VirualBox VM
+begin( description='VM Creation' )
+  vm = virtualbox.create()
+  foundation.virtualbox_uuid = vm[ 'uuid' ]
+  foundation.set_interface_macs( interface_list=vm[ 'interface_list' ] )
+end
+  """
+
+[ script.virtualbox-vm-destroy ]
+  description = 'Destroy VirualBox VM'
+  script = """# Destory VirualBox VM
+begin( description='VM Destruction' )
+  foundation.power_off()
+  foundation.destroy()
+  foundation.virtualbox_uuid = None
+end
+  """
