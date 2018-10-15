@@ -1,74 +1,28 @@
-sflinks = [ [ 'linux-base', 'vcenter-vm-base' ], [ 'vcenter-esx-base', 'vcenter-vm-base' ] ]
-
-[ structure.vcenter-esx-base ]
-  description = 'Base ESXi'
-  scripts = { 'create' = 'create-esx', 'destroy' = 'destroy-esx' }
-  config_values = {}
-
-[ script.create-esx ]
-  description = 'Install ESXi'
-  script = """# pxe boot and install
-dhcp.set_pxe( interface=structure.provisioning_interface, pxe='esx' )
-foundation.power_on()
-delay( seconds=120 )
-foundation.wait_for_poweroff()
-
-dhcp.set_pxe( interface=structure.provisioning_interface, pxe='normal-boot' )
-foundation.power_on()
-
-iputils.wait_for_port( target=structure.provisioning_ip, port=80 )
-
-datastore_list = config.datastore_list
-while len( array=datastore_list ) do
-begin()
-  datastore = pop( array=datastore_list )
-  vcenter.create_datastore( name=datastore[ 'name' ], model=datastore[ 'model' ] )
-end
-"""
-
-[ script.destroy-esx ]
-  description = 'Uninstall ESXi'
-  script = """# nothing to do, foundation cleanup should wipe/destroy the disks
-foundation.power_off()
-#eventually pxe boot to MBR wipper
-"""
-
-[ pxe.esx ]
-  boot_script = """echo ESX Installer
-kernel -n mboot.c32 {{ pxe_location }}/esxi/mboot.c32
-imgargs mboot.c32 -c {{ pxe_location }}/esxi/boot.cfg ks={{ __pxe_template_location }}/config/pxe_template/
-boot mboot.c32
-"""
-  template = """accepteula
-
-rootpw 0skin3rd
-
-clearpart --alldrives --overwritevmfs
-
-#install --firstdisk --overwritevmfs
-install --firstdisk=usb --overwritevmfs
-
-network --bootproto=static --ip={{ network.eth0.ip_address }} --netmask={{ network.eth0.netmask }}{% if network.eth0.gateway %} --gateway={{ network.eth0.gateway }}{% endif %} --nameserver={{ dns_servers.0 }} --hostname={{ hostname }}
-
-%post --interpreter=busybox
-/sbin/poweroff
-"""
+sflinks = [ [ 'linux-base', 'vcenter-vm-base' ] ]
 
 [ foundation.vcenter-vm-base ]
   description = 'Base VCenter VM'
   scripts = { 'create' = 'vcenter-vm-create', 'destroy' = 'vcenter-vm-destroy' }
   foundation_types = [ 'VCenter' ]
-  config_values = { '>packages' = ' open-vm-tools', 'memory_size' = 512, 'cpu_count' = 1 }
+  config_values = { '>packages' = ' open-vm-tools', 'memory_size' = 1024, 'cpu_count' = 1 }
   template = {}
   physical_interface_names = []
 
 [ script.vcenter-vm-create ]
   description = 'Create VCenter VM'
   script = """# Create VCenter VM
-begin( description='VM Creation' )
-  host_list = vcenter.host_list( min_memory=1024 )
+vm_spec = foundation.vcenter_vmspec
+
+begin( description='Locate Host' )
+  host_list = vcenter.host_list( min_memory=vm_spec.memory_size )
+end
+
+begin( description='Locate Datastore' )
   datastore_list = vcenter.datastore_list( host=host_list[0], min_free_space=5 )
-  vm_uuid = vcenter.create( host=host_list[0], datastore=datastore_list[0] )
+end
+
+begin( description='VM Creation' )
+  vm_uuid = vcenter.create( host=host_list[0], datastore=datastore_list[0], vm_spec=vm_spec )
   foundation.vcenter_uuid = vm_uuid
   interface_map = foundation.get_interface_map()
   foundation.set_interface_macs( interface_map=interface_map )

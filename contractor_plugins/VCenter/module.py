@@ -33,10 +33,15 @@ class create( ExternalFunction ):
     return self.uuid
 
   def setup( self, parms ):
+    try:
+      interface_type = self.getScriptValue( 'config', 'vcenter_virtual_exec_usage' )
+    except ValueError:
+      interface_type = 'E1000'
+
     interface_list = []
     counter = 0
     for name in INTERFACE_NAME_LIST:
-      interface_list.append( { 'name': name, 'network': 'VM Network', 'type': 'VirtualE1000' } )
+      interface_list.append( { 'name': name, 'network': 'VM Network', 'type': interface_type } )
       counter += 1
 
     self.vm_paramaters = {  # the defaults
@@ -75,25 +80,34 @@ class create( ExternalFunction ):
     except KeyError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
+    for key in ( 'host', 'datastore' ):
+      try:
+        self.vm_paramaters[ key ] = parms[ key ]
+      except KeyError:
+        raise ParamaterError( key, 'required' )
+
     try:
-      self.vm_paramaters[ 'host' ] = parms.get( 'host' )
+      vm_spec = parms[ 'vm_spec' ]
     except KeyError:
-      raise ParamaterError( 'host', 'Target host required' )
+      raise ParamaterError( 'vm_spec', 'required' )
 
+    if not isinstance( vm_spec, dict ):
+      raise ParamaterError( 'vm_spec', 'must be a dict' )
+
+    for key in ( 'cpu_count', 'memory_size' ):
+      try:
+        self.vm_paramaters[ key ] = int( vm_spec[ key ] )
+      except KeyError:
+        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'required' )
+      except ( ValueError, TypeError ):
+        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
+
+    self.vm_paramaters[ 'guest_id' ] = self.getScriptValue( 'config', 'vcenter_guest_id' )
+    self.vm_paramaters[ 'flags' ] = {}
     try:
-      self.vm_paramaters[ 'datastore' ] = parms.get( 'datastore' )
+      self.vm_paramaters[ 'flags' ][ 'virtual_exec_usage' ] = vm_spec[ 'vcenter_virtual_exec_usage' ]
     except KeyError:
-      raise ParamaterError( 'datastore', 'Target datastore required' )
-
-    try:
-      self.vm_paramaters[ 'cpu_count' ] = int( parms.get( 'cpu_count', 1 ) )
-    except ( ValueError, TypeError ):
-      raise ParamaterError( 'cpu_count', 'must be an integer' )
-
-    try:
-      self.vm_paramaters[ 'memory_size' ] = int( parms.get( 'memory_size', 1024 ) )
-    except ( ValueError, TypeError ):
-      raise ParamaterError( 'memory_size', 'must be an integer' )
+      pass
 
     if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
       raise ParamaterError( 'invalid name' )

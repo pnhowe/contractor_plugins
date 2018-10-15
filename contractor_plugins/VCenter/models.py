@@ -8,6 +8,7 @@ from contractor.Building.models import Foundation, Complex, Structure, FOUNDATIO
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
+from contractor.lib.config import getConfig
 
 from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
@@ -84,6 +85,23 @@ class VCenterComplex( Complex ):
     return 'VCenterComplex {0}'.format( self.pk )
 
 
+def _vmSpec( foundation ):
+  result = {}
+
+  structure_config = getConfig( foundation.structure )
+
+  result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 512 )
+
+  for key in ( 'vcenter_virtual_exec_usage', ):
+    try:
+      result[ key ] = structure_config[ key ]
+    except KeyError:
+      pass
+
+  return result
+
+
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VCenterFoundation( Foundation ):
   vcenter_host = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
@@ -100,6 +118,8 @@ class VCenterFoundation( Foundation ):
     result[ 'vcenter_cluster' ] = ( lambda foundation: foundation.vcenter_host.vcenter_cluster, None )
 
     result[ 'vcenter_uuid' ] = ( lambda foundation: foundation.vcenter_uuid, None )
+
+    result[ 'vcenter_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
     if write_mode is True:
       result[ 'vcenter_uuid' ] = ( result[ 'vcenter_uuid' ][0], lambda foundation, val: setattr( foundation, 'vcenter_uuid', val ) )
