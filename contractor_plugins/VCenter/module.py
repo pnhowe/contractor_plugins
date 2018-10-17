@@ -102,12 +102,11 @@ class create( ExternalFunction ):
       except ( ValueError, TypeError ):
         raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
 
-    self.vm_paramaters[ 'guest_id' ] = self.getScriptValue( 'config', 'vcenter_guest_id' )
-    self.vm_paramaters[ 'flags' ] = {}
-    try:
-      self.vm_paramaters[ 'flags' ][ 'virtual_exec_usage' ] = vm_spec[ 'vcenter_virtual_exec_usage' ]
-    except KeyError:
-      pass
+    for key in ( 'vcenter_guest_id', 'vcenter_network_interface_class' ):
+      try:
+        self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+      except KeyError:
+        pass
 
     if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
       raise ParamaterError( 'invalid name' )

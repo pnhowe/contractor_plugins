@@ -93,7 +93,7 @@ def _vmSpec( foundation ):
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
   result[ 'memory_size' ] = structure_config.get( 'memory_size', 512 )
 
-  for key in ( 'vcenter_virtual_exec_usage', ):
+  for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
     try:
       result[ key ] = structure_config[ key ]
     except KeyError:

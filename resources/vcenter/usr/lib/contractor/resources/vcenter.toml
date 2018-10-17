@@ -14,7 +14,7 @@ sflinks = [ [ 'linux-base', 'vcenter-vm-base' ] ]
 vm_spec = foundation.vcenter_vmspec
 
 begin( description='Locate Host' )
-  host_list = vcenter.host_list( min_memory=vm_spec.memory_size )
+  host_list = vcenter.host_list( min_memory=vm_spec[ 'memory_size' ] )
 end
 
 begin( description='Locate Datastore' )
