@@ -91,26 +91,29 @@ class DockerFoundation( Foundation ):
     return result
 
   def configAttributes( self ):
-    structure_blueprint_config = self.structure.blueprint.getConfig()
     result = super().configAttributes()
-    result.update( { 'docker_id': self.docker_id } )
+    result.update( { '_docker_id': self.docker_id } )
+    result.update( { '_docker_host': self.docker_host } )
 
-    _structureConfig( self.structure, [], structure_blueprint_config )  # TODO: need a getConfig (above) that only does the structure and it's blueprint
-
-    try:
-      result.update( { 'docker_image': structure_blueprint_config[ 'docker_image' ] } )
-    except KeyError:
-      pass
-
-    try:
-      result.update( { 'docker_port_map': structure_blueprint_config[ 'docker_port_map' ] } )
-    except KeyError:
-      pass
-
-    try:
-      result.update( { 'docker_port_list': structure_blueprint_config[ 'docker_port_list' ] } )
-    except KeyError:
-      pass
+    # this should be done the same way it is done for vcenter
+    #
+    # structure_blueprint_config = self.structure.blueprint.getConfig()
+    # _structureConfig( self.structure, [], structure_blueprint_config )  # TODO: need a getConfig (above) that only does the structure and it's blueprint
+    #
+    # try:
+    #   result.update( { 'docker_image': structure_blueprint_config[ 'docker_image' ] } )
+    # except KeyError:
+    #   pass
+    #
+    # try:
+    #   result.update( { 'docker_port_map': structure_blueprint_config[ 'docker_port_map' ] } )
+    # except KeyError:
+    #   pass
+    #
+    # try:
+    #   result.update( { 'docker_port_list': structure_blueprint_config[ 'docker_port_list' ] } )
+    # except KeyError:
+    #   pass
 
     return result
 

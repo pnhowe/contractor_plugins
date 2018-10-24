@@ -91,9 +91,10 @@ def _vmSpec( foundation ):
   structure_config = getConfig( foundation.structure )
 
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
-  result[ 'memory_size' ] = structure_config.get( 'memory_size', 512 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
+  result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
 
-  for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
+  for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
     try:
       result[ key ] = structure_config[ key ]
     except KeyError:
@@ -141,7 +142,10 @@ class VCenterFoundation( Foundation ):
 
   def configAttributes( self ):
     result = super().configAttributes()
-    result.update( { 'vcenter_uuid': self.vcenter_uuid } )
+    result.update( { '_vcenter_uuid': self.vcenter_uuid } )
+    result.update( { '_vcenter_host': self.vcenter_host } )
+    result.update( { '_vcenter_datacenter': self.vcenter_datacenter } )
+    result.update( { '_vcenter_cluster': self.vcenter_cluster } )
 
     return result
 

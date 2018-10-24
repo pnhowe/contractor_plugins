@@ -90,7 +90,8 @@ class VirtualBoxFoundation( Foundation ):
 
   def configAttributes( self ):
     result = super().configAttributes()
-    result.update( { 'virtualbox_uuid': self.virtualbox_uuid } )
+    result.update( { '_virtualbox_uuid': self.virtualbox_uuid } )
+    result.update( { '_virtualbox_host': self.virtualbox_host } )
 
     return result
 

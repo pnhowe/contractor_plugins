@@ -4,7 +4,7 @@ sflinks = [ [ 'linux-base', 'vcenter-vm-base' ] ]
   description = 'Base VCenter VM'
   scripts = { 'create' = 'vcenter-vm-create', 'destroy' = 'vcenter-vm-destroy' }
   foundation_types = [ 'VCenter' ]
-  config_values = { '>packages' = ' open-vm-tools', 'memory_size' = 1024, 'cpu_count' = 1 }
+  config_values = { '>packages' = ' open-vm-tools', 'memory_size' = 1024, 'cpu_count' = 1, vcenter_guest_id = 'otherGuest' }
   template = {}
   physical_interface_names = []
 

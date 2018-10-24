@@ -34,23 +34,6 @@ class create( ExternalFunction ):
 
   def setup( self, parms ):
     try:
-      interface_type = self.getScriptValue( 'config', 'vcenter_virtual_exec_usage' )
-    except ValueError:
-      interface_type = 'E1000'
-
-    interface_list = []
-    counter = 0
-    for name in INTERFACE_NAME_LIST:
-      interface_list.append( { 'name': name, 'network': 'VM Network', 'type': interface_type } )
-      counter += 1
-
-    self.vm_paramaters = {  # the defaults
-                           'disk_list': [ { 'size': 10, 'name': 'sda', 'allocate': 'thin' } ],  # disk size in G
-                           'interface_list': interface_list,
-                           'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
-                         }
-
-    try:
       self.connection_paramaters[ 'host' ] = self.getScriptValue( 'foundation', 'vcenter_host' )
     except ValueError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
@@ -80,12 +63,14 @@ class create( ExternalFunction ):
     except KeyError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
-    for key in ( 'host', 'datastore' ):
-      try:
-        self.vm_paramaters[ key ] = parms[ key ]
-      except KeyError:
-        raise ParamaterError( key, 'required' )
+    # is this an OVA, if so, short cut, just deploy it
+    ova = parms.get( 'ova', None )
+    if ova is not None:
+      self.vm_paramaters = { 'ova': ova }
 
+      return
+
+    # not OVA specify all the things
     try:
       vm_spec = parms[ 'vm_spec' ]
     except KeyError:
@@ -93,6 +78,33 @@ class create( ExternalFunction ):
 
     if not isinstance( vm_spec, dict ):
       raise ParamaterError( 'vm_spec', 'must be a dict' )
+
+    try:
+      interface_type = vm_spec[ 'vcenter_network_interface_class' ]
+    except ValueError:
+      interface_type = 'E1000'
+
+    interface_list = []
+    counter = 0
+    for name in INTERFACE_NAME_LIST:
+      interface_list.append( { 'name': name, 'network': 'VM Network', 'type': interface_type } )
+      counter += 1
+
+    self.vm_paramaters = {  # the defaults
+                           'disk_list': [ { 'size': 10, 'name': 'sda' } ],  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
+                           'interface_list': interface_list,
+                           'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
+                         }
+
+    if False:  # boot from iso instead
+      self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
+      self.vm_paramaters[ 'boot_order' ][0] = 'cd'
+
+    for key in ( 'host', 'datastore' ):
+      try:
+        self.vm_paramaters[ key ] = parms[ key ]
+      except KeyError:
+        raise ParamaterError( key, 'required' )
 
     for key in ( 'cpu_count', 'memory_size' ):
       try:
@@ -102,7 +114,7 @@ class create( ExternalFunction ):
       except ( ValueError, TypeError ):
         raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
 
-    for key in ( 'vcenter_guest_id', 'vcenter_network_interface_class' ):
+    for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage' ):
       try:
         self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:
