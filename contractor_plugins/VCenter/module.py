@@ -81,7 +81,7 @@ class create( ExternalFunction ):
 
     try:
       interface_type = vm_spec[ 'vcenter_network_interface_class' ]
-    except ValueError:
+    except KeyError:
       interface_type = 'E1000'
 
     interface_list = []
@@ -114,7 +114,7 @@ class create( ExternalFunction ):
       except ( ValueError, TypeError ):
         raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
 
-    for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage' ):
+    for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage' ):
       try:
         self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:
