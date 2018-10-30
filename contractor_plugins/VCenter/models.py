@@ -49,6 +49,14 @@ class VCenterComplex( Complex ):
   def type( self ):
     return 'VCenter'
 
+  @property
+  def connection_paramaters( self ):
+    return {
+              'host': self.vcenter_host.primary_ip,
+              'username': self.vcenter_username,
+              'password': self.vcenter_password,
+            }
+
   def newFoundation( self, hostname ):
     foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
     foundation.vcenter_host = self
@@ -90,15 +98,19 @@ def _vmSpec( foundation ):
 
   structure_config = getConfig( foundation.structure )
 
-  result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
-  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
-  result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
+  try:
+    result[ 'ova' ] = structure_config[ 'ova' ]
 
-  for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
-    try:
-      result[ key ] = structure_config[ key ]
-    except KeyError:
-      pass
+  except KeyError:
+    result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
+    result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
+    result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
+
+    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
+      try:
+        result[ key ] = structure_config[ key ]
+      except KeyError:
+        pass
 
   return result
 
@@ -112,14 +124,8 @@ class VCenterFoundation( Foundation ):
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VCenterFoundation, VCenterFoundation ).getTscriptValues( write_mode )
 
-    result[ 'vcenter_host' ] = ( lambda foundation: foundation.host_ip, None )
-    result[ 'vcenter_username' ] = ( lambda foundation: foundation.vcenter_host.vcenter_username, None )
-    result[ 'vcenter_password' ] = ( lambda foundation: foundation.vcenter_host.vcenter_password, None )
-    result[ 'vcenter_datacenter' ] = ( lambda foundation: foundation.vcenter_host.vcenter_datacenter, None )
-    result[ 'vcenter_cluster' ] = ( lambda foundation: foundation.vcenter_host.vcenter_cluster, None )
-
+    result[ 'vcenter_host' ] = ( lambda foundation: foundation.vcenter_host, None )
     result[ 'vcenter_uuid' ] = ( lambda foundation: foundation.vcenter_uuid, None )
-
     result[ 'vcenter_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
     if write_mode is True:
@@ -143,9 +149,9 @@ class VCenterFoundation( Foundation ):
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_vcenter_uuid': self.vcenter_uuid } )
-    result.update( { '_vcenter_host': self.vcenter_host } )
-    result.update( { '_vcenter_datacenter': self.vcenter_datacenter } )
-    result.update( { '_vcenter_cluster': self.vcenter_cluster } )
+    result.update( { '_vcenter_host': self.vcenter_host.name } )
+    result.update( { '_vcenter_datacenter': self.vcenter_host.vcenter_datacenter } )
+    result.update( { '_vcenter_cluster': self.vcenter_host.vcenter_cluster } )
 
     return result
 
@@ -171,10 +177,6 @@ class VCenterFoundation( Foundation ):
   @property
   def complex( self ):
     return self.vcenter_host
-
-  @property
-  def host_ip( self ):
-    return self.vcenter_host.vcenter_host.primary_ip
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod

@@ -107,7 +107,7 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.host = foundation.host_ip
+    self.host = foundation.docker_host.host_ip
     self.done = None
 
   @property
@@ -184,7 +184,7 @@ class start_stop( ExternalFunction ):  # TODO: need a delay after each power com
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.host = foundation.host_ip
+    self.host = foundation.docker_host.host_ip
     self.desired_state = state
     self.curent_state = None
     self.sent = False
@@ -226,7 +226,7 @@ class state( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.host = foundation.host_ip
+    self.host = foundation.docker_host.host_ip
     self.state = None
 
   @property

@@ -113,6 +113,12 @@ class ManualFoundation( Foundation ):
 class ManualComplexedFoundation( Foundation ):
   complex_host = models.ForeignKey( ManualComplex, on_delete=models.PROTECT )
 
+  def configAttributes( self ):
+    result = super().configAttributes()
+    result.update( { '_complex_host': self.complex_host.name } )
+
+    return result
+
   @property
   def subclass( self ):
     return self

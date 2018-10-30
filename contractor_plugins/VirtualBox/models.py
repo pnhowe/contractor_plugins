@@ -62,13 +62,14 @@ class VirtualBoxComplex( Complex ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
-  virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
   virtualbox_host = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
+  virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VirtualBoxFoundation, VirtualBoxFoundation ).getTscriptValues( write_mode )
 
+    result[ 'virtualbox_host' ] = ( lambda foundation: foundation.virtualbox_host, None )
     result[ 'virtualbox_uuid' ] = ( lambda foundation: foundation.virtualbox_uuid, None )
 
     if write_mode is True:
@@ -91,7 +92,7 @@ class VirtualBoxFoundation( Foundation ):
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_virtualbox_uuid': self.virtualbox_uuid } )
-    result.update( { '_virtualbox_host': self.virtualbox_host } )
+    result.update( { '_virtualbox_host': self.virtualbox_host.name } )
 
     return result
 
