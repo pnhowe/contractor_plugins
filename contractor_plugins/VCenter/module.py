@@ -39,24 +39,23 @@ class create( ExternalFunction ):
       raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
 
     self.connection_paramaters = vcenter_host.connection_paramaters
-    self.datacenter = vcenter_host.vcenter_datacenter
-    self.cluster = vcenter_host.vcenter_cluster
 
     self.vm_paramaters = {}
+
+    self.vm_paramaters[ 'datacenter' ] = vcenter_host.vcenter_datacenter
+    self.vm_paramaters[ 'cluster' ] = vcenter_host.vcenter_cluster
 
     try:
       self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
     except KeyError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
-    # is this an OVA, if so, short cut, just deploy it
-    ova = parms.get( 'ova', None )
-    if ova is not None:
-      self.vm_paramaters[ 'ova' ] = ova
+    for key in ( 'host', 'datastore' ):
+      try:
+        self.vm_paramaters[ key ] = parms[ key ]
+      except KeyError:
+        raise ParamaterError( key, 'required' )
 
-      return
-
-    # not OVA specify all the things
     try:
       vm_spec = parms[ 'vm_spec' ]
     except KeyError:
@@ -65,6 +64,33 @@ class create( ExternalFunction ):
     if not isinstance( vm_spec, dict ):
       raise ParamaterError( 'vm_spec', 'must be a dict' )
 
+    # for now we will cary on CPU, Memeory, for OVAs evntually something will pull this info from the OVA
+    for key in ( 'cpu_count', 'memory_size' ):
+      try:
+        self.vm_paramaters[ key ] = int( vm_spec[ key ] )
+      except KeyError:
+        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'required' )
+      except ( ValueError, TypeError ):
+        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
+
+    if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
+      raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
+    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
+      raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
+
+    # is this an OVA, if so, short cut, just deploy it
+    ova = vm_spec.get( 'ova', None )
+    if ova is not None:
+      self.vm_paramaters[ 'ova' ] = ova
+
+      interface_list = []
+      for name in INTERFACE_NAME_LIST:
+        interface_list.append( { 'name': name, 'network': 'VM Network' } )
+
+      self.vm_paramaters[ 'interface_list' ] = interface_list
+      return
+
+    # not OVA specify all the things
     try:
       interface_type = vm_spec[ 'vcenter_network_interface_class' ]
     except KeyError:
@@ -78,25 +104,11 @@ class create( ExternalFunction ):
 
     self.vm_paramaters[ 'disk_list' ] = [ { 'size': 10, 'name': 'sda' } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
     self.vm_paramaters[ 'interface_list' ] = interface_list
-    self.vm_paramaters[ 'boot_order': ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
+    self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
 
     if False:  # boot from iso instead
       self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
-      self.vm_paramaters[ 'boot_order' ][0] = 'cd'
-
-    for key in ( 'host', 'datastore' ):
-      try:
-        self.vm_paramaters[ key ] = parms[ key ]
-      except KeyError:
-        raise ParamaterError( key, 'required' )
-
-    for key in ( 'cpu_count', 'memory_size' ):
-      try:
-        self.vm_paramaters[ key ] = int( vm_spec[ key ] )
-      except KeyError:
-        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'required' )
-      except ( ValueError, TypeError ):
-        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
+      self.vm_paramaters[ 'boot_order' ] = [ 'cd', 'net', 'hdd' ]
 
     for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage' ):
       try:
@@ -106,10 +118,6 @@ class create( ExternalFunction ):
 
     if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
       raise ParamaterError( 'invalid name' )
-    if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
-      raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
-    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
-      raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
 
   def toSubcontractor( self ):
     if self.in_rollback:
@@ -171,40 +179,38 @@ class host_list( ExternalFunction ):
     self.datacenter = vcenter_host.vcenter_datacenter
     self.cluster = vcenter_host.vcenter_cluster
 
-    try:
-      self.min_memory = int( parms.get( 'min_memory' ) )  # in MB
-    except KeyError:
-      raise ParamaterError( 'min_memory', 'required' )
-    except ( ValueError, TypeError ):
-      raise ParamaterError( 'min_memory', 'must be an integer' )
+    for key in ( 'min_memory', 'min_cpu' ):  # memory in MB
+      try:
+        setattr( self, key, int( parms[ key ] ) )
+      except KeyError:
+        raise ParamaterError( key, 'required' )
+      except ( ValueError, TypeError ):
+        raise ParamaterError( key, 'must be an integer' )
 
-    try:
-      self.cpu_scaler = int( parms.get( 'cpu_scaler', 1 ) )
-    except ( ValueError, TypeError ):
-      raise ParamaterError( 'cpu_scaler', 'must be an integer' )
-
-    try:
-      self.memory_scaler = int( parms.get( 'memory_scaler', 1 ) )
-    except ( ValueError, TypeError ):
-      raise ParamaterError( 'memory_scaler', 'must be an integer' )
+    for key in ( 'cpu_scaler', 'memory_scaler' ):
+      try:
+        setattr( self, key, int( parms.get( key, 1 ) ) )
+      except ( ValueError, TypeError ):
+        raise ParamaterError( key, 'must be an integer' )
 
   def toSubcontractor( self ):
-    return ( 'host_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'min_memory': self.min_memory, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler } )
+    return ( 'host_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'min_memory': self.min_memory, 'min_cpu': self.min_cpu, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler } )
 
   def fromSubcontractor( self, data ):
     self.result = data[ 'host_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.cluster, self.min_memory, self.cpu_scaler, self.memory_scaler, self.result )
+    return ( self.connection_paramaters, self.datacenter, self.cluster, self.min_memory, self.min_cpu, self.cpu_scaler, self.memory_scaler, self.result )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.datacenter = state[1]
     self.cluster = state[2]
     self.min_memory = state[3]
-    self.cpu_scaler = state[4]
-    self.memory_scaler = state[5]
-    self.result = state[6]
+    self.min_cpu = state[4]
+    self.cpu_scaler = state[5]
+    self.memory_scaler = state[6]
+    self.result = state[7]
 
 
 class create_datastore( ExternalFunction ):

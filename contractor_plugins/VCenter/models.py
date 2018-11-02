@@ -8,7 +8,7 @@ from contractor.Building.models import Foundation, Complex, Structure, FOUNDATIO
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
-from contractor.lib.config import getConfig
+from contractor.lib.config import getConfig, mergeValues
 
 from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
@@ -97,13 +97,15 @@ def _vmSpec( foundation ):
   result = {}
 
   structure_config = getConfig( foundation.structure )
+  structure_config = mergeValues( structure_config )
+
+  result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
 
   try:
     result[ 'ova' ] = structure_config[ 'ova' ]
 
   except KeyError:
-    result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
-    result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
     result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
 
     for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):

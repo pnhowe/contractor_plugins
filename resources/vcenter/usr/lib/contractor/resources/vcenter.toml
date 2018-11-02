@@ -4,7 +4,7 @@ sflinks = [ [ 'linux-base', 'vcenter-vm-base' ] ]
   description = 'Base VCenter VM'
   scripts = { 'create' = 'vcenter-vm-create', 'destroy' = 'vcenter-vm-destroy' }
   foundation_types = [ 'VCenter' ]
-  config_values = { '>packages' = ' open-vm-tools', 'memory_size' = 1024, 'cpu_count' = 1, vcenter_guest_id = 'otherGuest' }
+  config_values = { '>packages' = ' open-vm-tools', 'memory_size' = 1024, 'cpu_count' = 1, vcenter_guest_id = 'otherGuest', vcenter_ds_name_regex='' }
   template = {}
   physical_interface_names = []
 
@@ -14,11 +14,11 @@ sflinks = [ [ 'linux-base', 'vcenter-vm-base' ] ]
 vm_spec = foundation.vcenter_vmspec
 
 begin( description='Locate Host' )
-  host_list = vcenter.host_list( min_memory=vm_spec[ 'memory_size' ] )
+  host_list = vcenter.host_list( min_memory=vm_spec[ 'memory_size' ], min_cpu=vm_spec[ 'cpu_count' ] )
 end
 
 begin( description='Locate Datastore' )
-  datastore_list = vcenter.datastore_list( host=host_list[0], min_free_space=5 )
+  datastore_list = vcenter.datastore_list( host=host_list[0], min_free_space=5, name_regex=config.vcenter_ds_name_regex )
 end
 
 begin( description='VM Creation' )
