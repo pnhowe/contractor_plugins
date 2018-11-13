@@ -7,8 +7,6 @@ from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
 NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
 
-INTERFACE_NAME_LIST = [ 'eth0' ]
-
 
 # exported functions
 class create( ExternalFunction ):
@@ -33,6 +31,11 @@ class create( ExternalFunction ):
     return self.uuid
 
   def setup( self, parms ):
+    try:
+      foundation = self.getScriptValue( 'foundation', 'foundation' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
+
     try:
       vcenter_host = self.getScriptValue( 'foundation', 'vcenter_host' )
     except ValueError as e:
@@ -83,9 +86,24 @@ class create( ExternalFunction ):
     if ova is not None:
       self.vm_paramaters[ 'ova' ] = ova
 
+      try:
+        self.vm_paramaters[ 'disk_provisioning' ] = self.vm_paramaters[ 'disk_provisioning' ]
+      except KeyError:
+        pass
+
+      for key in ( 'vcenter_property_map', 'vcenter_deployment_option', 'vcenter_ip_protocol' ):
+        try:
+          self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+        except KeyError:
+          pass
+
       interface_list = []
-      for name in INTERFACE_NAME_LIST:
-        interface_list.append( { 'name': name, 'network': 'VM Network' } )
+      for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
+        name_map = interface.addressblock_name_map
+        if name_map is None:
+          raise ParamaterError( '<internal>', 'addressblock name maping is None' )
+
+        interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] } )
 
       self.vm_paramaters[ 'interface_list' ] = interface_list
       return
@@ -98,11 +116,12 @@ class create( ExternalFunction ):
 
     interface_list = []
     counter = 0
-    for name in INTERFACE_NAME_LIST:
-      interface_list.append( { 'name': name, 'network': 'VM Network', 'type': interface_type } )
+    for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
+      name_map = interface.addressblock_name_map
+      interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ], 'type': interface_type } )
       counter += 1
 
-    self.vm_paramaters[ 'disk_list' ] = [ { 'size': 10, 'name': 'sda' } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
+    self.vm_paramaters[ 'disk_list' ] = [ { 'size': 10, 'name': 'sda', 'type': self.vm_paramaters.get( 'disk_provisioning', 'thin' ) } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
     self.vm_paramaters[ 'interface_list' ] = interface_list
     self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
 
@@ -483,6 +502,7 @@ class wait_for_poweroff( ExternalFunction ):
 class get_interface_map( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
+    self.foundation = foundation
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
     self.connection_paramaters = foundation.vcenter_host.connection_paramaters
@@ -500,9 +520,11 @@ class get_interface_map( ExternalFunction ):
 
   @property
   def value( self ):
+    pos = 0
     result = {}
-    for i in range( 0, min( len( INTERFACE_NAME_LIST ), len( self.interface_list ) ) ):
-      result[ INTERFACE_NAME_LIST[ i ] ] = self.interface_list[ i ]
+    for interface in self.foundation.networkinterface_set.all().order_by( 'physical_location' ):
+      result[ interface.physical_location ] = self.interface_list[ pos ]
+      pos += 1
 
     return result
 
@@ -513,13 +535,14 @@ class get_interface_map( ExternalFunction ):
     self.interface_list = data[ 'interface_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.interface_list )
+    return ( self.foundation, self.connection_paramaters, self.uuid, self.name, self.interface_list )
 
   def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
-    self.uuid = state[1]
-    self.name = state[2]
-    self.interface_list = state[3]
+    self.foundation = state[0]
+    self.connection_paramaters = state[1]
+    self.uuid = state[2]
+    self.name = state[3]
+    self.interface_list = state[4]
 
 
 class set_interface_macs():
@@ -528,19 +551,18 @@ class set_interface_macs():
     self.foundation = foundation
 
   def __call__( self, interface_map ):
-    for name in interface_map:
-      mac = interface_map[ name ]
+    for physical_location in interface_map:
       try:
-        iface = self.foundation.networkinterface_set.get( name=name )
+        iface = self.foundation.networkinterface_set.get( physical_location=physical_location )
       except ObjectDoesNotExist:
-        raise ParamaterError( 'interface_map', 'interface named "{0}" not found'.format( name ) )
+        raise ParamaterError( 'interface_map', 'interface at "{0}" not found'.format( physical_location ) )
 
-      iface.mac = mac
+      iface.mac = interface_map[ physical_location ]
 
       try:
         iface.full_clean()
       except ValidationError as e:
-        raise ParamaterError( 'interface_map', 'Error saving interface "{0}": {1}'.format( name, e ) )
+        raise ParamaterError( 'interface_map', 'Error saving interface "{0}": {1}'.format( physical_location, e ) )
 
       iface.save()
 

@@ -105,7 +105,13 @@ def _vmSpec( foundation ):
   try:
     result[ 'ova' ] = structure_config[ 'ova' ]
 
-  except KeyError:
+    for key in ( 'vcenter_property_map', 'vcenter_deployment_option', 'vcenter_ip_protocol' ):
+      try:
+        result[ key ] = structure_config[ key ]
+      except KeyError:
+        pass
+
+  except KeyError:  # non OVA deploy
     result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
 
     for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
