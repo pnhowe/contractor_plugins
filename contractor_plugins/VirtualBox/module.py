@@ -7,13 +7,14 @@ from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
 NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
 
+INTERFACE_NAME_LIST = [ 'eth0', 'eth1', 'eth2', 'eth3' ]  # virtualbox does only 4 interfaces
+
 
 # exported functions
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.uuid = None
-    self.interface_list = []
     self.in_rollback = False
     self.vm_paramaters = {}
 
@@ -29,56 +30,18 @@ class create( ExternalFunction ):
 
   @property
   def value( self ):
-    return { 'uuid': self.uuid, 'interface_list': self.interface_list }
+    return self.uuid
 
   def setup( self, parms ):
-    try:
-      foundation_id = self.getScriptValue( 'foundation', 'id' )
-    except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Id: {0}'.format( e ) )
+    interface_list = []
+    counter = 0
+    for name in INTERFACE_NAME_LIST:
+      interface_list.append( { 'name': name, 'network': 'vboxnet0', 'type': 'host' } )  # type one of 'host', 'bridge', 'nat', 'internal',  max 4 interfaces
+      counter += 1
 
-    try:
-      name = self.getScriptValue( 'foundation', 'locator' )
-    except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
-
-    if not NAME_REGEX.match( name ):
-      raise ParamaterError( '<internal>', 'invalid name (ie: Foundation Locator)' )
-
-    try:
-      cpu_count = self.getScriptValue( 'config', 'cpu_count' )
-    except ValueError as e:  # TODO: would be nice to log a warning here
-      cpu_count = 1
-
-    try:
-      cpu_count = int( cpu_count )
-    except TypeError:
-      raise ParamaterError( '<internal>', 'cpu count must be integer' )
-
-    if cpu_count > 64 or cpu_count < 1:
-      raise ParamaterError( 'cpu_count', 'cpu_count must be from 1 to 64')
-
-    try:
-      memory_size = self.getScriptValue( 'config', 'memory_size' )
-    except ValueError as e:  # TODO: would be nice to log a warning here
-      memory_size = 512
-
-    try:
-      memory_size = int( memory_size )
-    except TypeError:
-      raise ParamaterError( '<internal>', 'cpu count must be integer' )
-
-    if memory_size > 1048510 or memory_size < 512:
-      raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
-
-    mac = '080027{0:06x}'.format( ( 4 * foundation_id ) )  # leaving room for 4 interfaces per foundation
-    self.vm_paramaters = {
-                           'name': name,
-                           'cpu_count': cpu_count,
-                           'memory_size': memory_size,  # in Meg
+    self.vm_paramaters = {  # the defaults
                            'disk_list': [ { 'name': 'sda', 'size': 5 } ],  # disk size in G
-                           'interface_list': [ { 'type': 'bridge', 'network': 'enx847beb5.1000', 'name': 'eth0', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  max 4 interfaces
-                           #'interface_list': [ { 'type': 'host', 'network': 'vboxnet0', 'name': 'eth0', 'mac': mac } ],  # type one of 'host', 'bridge', 'nat', 'internal',  max 4 interfaces
+                           'interface_list': interface_list,
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
 
@@ -86,18 +49,39 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
       self.vm_paramaters[ 'boot_order' ][0] = 'cd'
 
+    try:
+      self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
+    except KeyError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+
+    try:
+      self.vm_paramaters[ 'cpu_count' ] = int( parms.get( 'cpu_count', 1 ) )
+    except ( ValueError, TypeError ):
+      raise ParamaterError( 'cpu_count', 'must be an integer' )
+
+    try:
+      self.vm_paramaters[ 'memory_size' ] = int( parms.get( 'memory_size', 1024 ) )
+    except ( ValueError, TypeError ):
+      raise ParamaterError( 'memory_size', 'must be an integer' )
+
+    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
+      raise ParamaterError( 'invalid name' )
+    if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
+      raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
+    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
+      raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
+
   def toSubcontractor( self ):
     if self.in_rollback:
-      return ( 'create_rollback', self.vm_paramaters )
+      return ( 'create_rollback', { 'vm': self.vm_paramaters } )
     else:
-      return ( 'create', self.vm_paramaters )
+      return ( 'create', { 'vm': self.vm_paramaters } )
 
   def fromSubcontractor( self, data ):  # TODO: really if these are missing or false, there is a problem
     if self.in_rollback:
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
       self.uuid = data.get( 'uuid', None )
-      self.interface_list = data.get( 'interface_list', [] )  # TODO: seperate the interface_list out to seperate function like vcenter
 
   def rollback( self ):
     if self.uuid is not None:
@@ -106,13 +90,12 @@ class create( ExternalFunction ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.in_rollback, self.uuid, self.interface_list, self.vm_paramaters )
+    return ( self.vm_paramaters, self.in_rollback, self.uuid )
 
   def __setstate__( self, state ):
-    self.in_rollback = state[0]
-    self.uuid = state[1]
-    self.interface_list = state[2]
-    self.vm_paramaters = state[3]
+    self.vm_paramaters = state[0]
+    self.in_rollback = state[1]
+    self.uuid = state[2]
 
 
 # other functions used by the virtualbox foundation
@@ -250,6 +233,46 @@ class wait_for_poweroff( ExternalFunction ):
     self.uuid = state[0]
     self.name = state[1]
     self.current_state = state[2]
+
+
+class get_interface_map( ExternalFunction ):
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.uuid = foundation.virtualbox_uuid
+    self.name = foundation.locator
+    self.interface_list = None
+
+  @property
+  def ready( self ):
+    if self.interface_list is not None:
+      return True
+    else:
+      return 'Waiting for Interface Map'
+
+  def setup( self, parms ):
+    pass
+
+  @property
+  def value( self ):
+    result = {}
+    for i in range( 0, min( len( INTERFACE_NAME_LIST ), len( self.interface_list ) ) ):
+      result[ INTERFACE_NAME_LIST[ i ] ] = self.interface_list[ i ]
+
+    return result
+
+  def toSubcontractor( self ):
+    return ( 'get_interface_map', { 'uuid': self.uuid, 'name': self.name } )
+
+  def fromSubcontractor( self, data ):
+    self.interface_list = data[ 'interface_list' ]
+
+  def __getstate__( self ):
+    return ( self.uuid, self.name, self.interface_list )
+
+  def __setstate__( self, state ):
+    self.uuid = state[0]
+    self.name = state[1]
+    self.interface_list = state[2]
 
 
 class set_interface_macs():

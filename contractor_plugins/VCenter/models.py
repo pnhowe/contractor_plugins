@@ -8,6 +8,7 @@ from contractor.Building.models import Foundation, Complex, Structure, FOUNDATIO
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
+from contractor.lib.config import getConfig, mergeValues
 
 from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
@@ -48,6 +49,14 @@ class VCenterComplex( Complex ):
   def type( self ):
     return 'VCenter'
 
+  @property
+  def connection_paramaters( self ):
+    return {
+              'host': self.vcenter_host.primary_ip,
+              'username': self.vcenter_username,
+              'password': self.vcenter_password,
+            }
+
   def newFoundation( self, hostname ):
     foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
     foundation.vcenter_host = self
@@ -84,6 +93,36 @@ class VCenterComplex( Complex ):
     return 'VCenterComplex {0}'.format( self.pk )
 
 
+def _vmSpec( foundation ):
+  result = {}
+
+  structure_config = getConfig( foundation.structure )
+  structure_config = mergeValues( structure_config )
+
+  result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
+
+  try:
+    result[ 'ova' ] = structure_config[ 'ova' ]
+
+    for key in ( 'vcenter_property_map', 'vcenter_deployment_option', 'vcenter_ip_protocol' ):
+      try:
+        result[ key ] = structure_config[ key ]
+      except KeyError:
+        pass
+
+  except KeyError:  # non OVA deploy
+    result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
+
+    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
+      try:
+        result[ key ] = structure_config[ key ]
+      except KeyError:
+        pass
+
+  return result
+
+
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VCenterFoundation( Foundation ):
   vcenter_host = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
@@ -93,13 +132,9 @@ class VCenterFoundation( Foundation ):
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VCenterFoundation, VCenterFoundation ).getTscriptValues( write_mode )
 
-    result[ 'vcenter_host' ] = ( lambda foundation: foundation.host_ip, None )
-    result[ 'vcenter_username' ] = ( lambda foundation: foundation.vcenter_host.vcenter_username, None )
-    result[ 'vcenter_password' ] = ( lambda foundation: foundation.vcenter_host.vcenter_password, None )
-    result[ 'vcenter_datacenter' ] = ( lambda foundation: foundation.vcenter_host.vcenter_datacenter, None )
-    result[ 'vcenter_cluster' ] = ( lambda foundation: foundation.vcenter_host.vcenter_cluster, None )
-
+    result[ 'vcenter_host' ] = ( lambda foundation: foundation.vcenter_host, None )
     result[ 'vcenter_uuid' ] = ( lambda foundation: foundation.vcenter_uuid, None )
+    result[ 'vcenter_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
     if write_mode is True:
       result[ 'vcenter_uuid' ] = ( result[ 'vcenter_uuid' ][0], lambda foundation, val: setattr( foundation, 'vcenter_uuid', val ) )
@@ -121,7 +156,10 @@ class VCenterFoundation( Foundation ):
 
   def configAttributes( self ):
     result = super().configAttributes()
-    result.update( { 'vcenter_uuid': self.vcenter_uuid } )
+    result.update( { '_vcenter_uuid': self.vcenter_uuid } )
+    result.update( { '_vcenter_host': self.vcenter_host.name } )
+    result.update( { '_vcenter_datacenter': self.vcenter_host.vcenter_datacenter } )
+    result.update( { '_vcenter_cluster': self.vcenter_host.vcenter_cluster } )
 
     return result
 
@@ -147,10 +185,6 @@ class VCenterFoundation( Foundation ):
   @property
   def complex( self ):
     return self.vcenter_host
-
-  @property
-  def host_ip( self ):
-    return self.vcenter_host.vcenter_host.primary_ip
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod

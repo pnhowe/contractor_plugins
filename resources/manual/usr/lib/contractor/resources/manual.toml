@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'manual-foundation-base' ], [ 'vcenter-esx-base', 'manual-foundation-base' ], [ 'manual-structure-base', 'manual-foundation-base' ]  ]
+sflinks = [ [ 'linux-base', 'manual-foundation-base' ], [ 'manual-structure-base', 'manual-foundation-base' ]  ]
 
 [ structure.manual-structure-base ]
   description = 'Base Manual Structure'

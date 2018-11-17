@@ -7,7 +7,6 @@ from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
-from contractor.lib.config import _structureConfig
 
 from contractor_plugins.Docker.module import start_stop, state, destroy, map_ports, unmap_ports
 
@@ -27,6 +26,10 @@ class DockerComplex( Complex ):
   @property
   def type( self ):
     return 'Docker'
+
+  @property
+  def host_ip( self ):
+    return self.members.get().primary_ip
 
   def newFoundation( self, hostname ):
     foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
@@ -71,7 +74,7 @@ class DockerFoundation( Foundation ):
     result = super( DockerFoundation, DockerFoundation ).getTscriptValues( write_mode )
 
     result[ 'docker_id' ] = ( lambda foundation: foundation.docker_id, None )
-    result[ 'docker_host' ] = ( lambda foundation: foundation.host_ip, None )
+    result[ 'docker_host' ] = ( lambda foundation: foundation.docker_host, None )
 
     if write_mode is True:
       result[ 'docker_id' ] = ( result[ 'docker_id' ][0], lambda foundation, val: setattr( foundation, 'docker_id', val ) )
@@ -91,26 +94,29 @@ class DockerFoundation( Foundation ):
     return result
 
   def configAttributes( self ):
-    structure_blueprint_config = self.structure.blueprint.getConfig()
     result = super().configAttributes()
-    result.update( { 'docker_id': self.docker_id } )
+    result.update( { '_docker_id': self.docker_id } )
+    result.update( { '_docker_host': self.docker_host.name } )
 
-    _structureConfig( self.structure, [], structure_blueprint_config )  # TODO: need a getConfig (above) that only does the structure and it's blueprint
-
-    try:
-      result.update( { 'docker_image': structure_blueprint_config[ 'docker_image' ] } )
-    except KeyError:
-      pass
-
-    try:
-      result.update( { 'docker_port_map': structure_blueprint_config[ 'docker_port_map' ] } )
-    except KeyError:
-      pass
-
-    try:
-      result.update( { 'docker_port_list': structure_blueprint_config[ 'docker_port_list' ] } )
-    except KeyError:
-      pass
+    # this should be done the same way it is done for vcenter
+    #
+    # structure_blueprint_config = self.structure.blueprint.getConfig()
+    # _structureConfig( self.structure, [], structure_blueprint_config )  # TODO: need a getConfig (above) that only does the structure and it's blueprint
+    #
+    # try:
+    #   result.update( { 'docker_image': structure_blueprint_config[ 'docker_image' ] } )
+    # except KeyError:
+    #   pass
+    #
+    # try:
+    #   result.update( { 'docker_port_map': structure_blueprint_config[ 'docker_port_map' ] } )
+    # except KeyError:
+    #   pass
+    #
+    # try:
+    #   result.update( { 'docker_port_list': structure_blueprint_config[ 'docker_port_list' ] } )
+    # except KeyError:
+    #   pass
 
     return result
 
@@ -136,10 +142,6 @@ class DockerFoundation( Foundation ):
   @property
   def complex( self ):
     return self.docker_host
-
-  @property
-  def host_ip( self ):
-    return self.docker_host.members.get().primary_ip
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
