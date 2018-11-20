@@ -27,7 +27,7 @@ pause( msg='Resume When OS is Uninstalled' )
 """
 
 [ script.manual-structure-utility ]
-  description = 'Utility Script for Manual OS' )
+  description = 'Utility Script for Manual OS'
   script = """# Utility Script for Manual OS
 pause( msg='Do the thing, then Resume' )
 """
