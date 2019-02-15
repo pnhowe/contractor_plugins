@@ -1,5 +1,3 @@
-WARNING!!! this is not workable yet, hopfully soon.
-
 Contractor Plugins
 ==================
 
@@ -16,47 +14,7 @@ This way network segmentation can be maintained.  Each instance
 will need HTTP(s) which can be proxied back to contractor.
 
 
-Installation
-------------
-
-after installing the python source, you will need to enable the plugins you would
-like to use in the django settings.py for contractor.
-
-In the INSTALLED_APPS section, add the desired plugins you would like to use after
-'contractor.SubContractor'
-
-for example::
-
-  INSTALLED_APPS = (
-      'contractor.User',
-      'contractor.Site',
-      'contractor.BluePrint',
-      'contractor.Building',
-      'contractor.Utilities',
-      'contractor.Foreman',
-      'contractor.SubContractor',
-      'contractor_plugins.Manual',
-      'contractor_plugins.VirtualBox',
-      'django.contrib.admin',
-      'django.contrib.auth',
-      'django.contrib.contenttypes',
-      'django.contrib.sessions',
-      'django.contrib.messages',
-      'django.contrib.staticfiles',
-  )
-
-That is is how your INSTALLED_APPS should look with the  Manual and  VirtualBox
-plugins installed.
-
-After that you need to run the django migrate app to create the database tables
-for thoes enabled plugins::
-
-  cd /usr/local/contractor/utils
-  ./manage migrate
-
-NOTE: if migrate has not been run for contractor it's self yet, that will also
-create the database for contractor.  For help configuring contractor for
-database access see the contractor README
+see http://t3kton.github.io
 
 Plugins
 =======
