@@ -6,6 +6,7 @@ from cinp.orm_django import DjangoCInP as CInP
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
+from contractor.lib.config import getConfig, mergeValues
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
 from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, set_interface_macs
@@ -19,6 +20,9 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 
 @cinp.model( property_list=( 'state', 'type' ) )
 class VirtualBoxComplex( Complex ):
+  virtualbox_username = models.CharField( max_length=50 )
+  virtualbox_password = models.CharField( max_length=50 )
+
   @property
   def subclass( self ):
     return self
@@ -26,6 +30,14 @@ class VirtualBoxComplex( Complex ):
   @property
   def type( self ):
     return 'VirtualBox'
+
+  @property
+  def connection_paramaters( self ):
+    return {
+              'host': self.members[0].primary_ip,
+              'username': self.virtualbox_username,
+              'password': self.virtualbox_password,
+            }
 
   def newFoundation( self, hostname ):
     foundation = VirtualBoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
@@ -60,6 +72,20 @@ class VirtualBoxComplex( Complex ):
     return 'VirtualBoxComplex {0}'.format( self.pk )
 
 
+def _vmSpec( foundation ):
+  result = {}
+
+  structure_config = getConfig( foundation.structure )
+  structure_config = mergeValues( structure_config )
+
+  result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
+
+  result[ 'virtualbox_guest_type' ] = structure_config.get( 'virtualbox_guest_type', 'Other' )
+
+  return result
+
+
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
   virtualbox_host = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
@@ -71,6 +97,7 @@ class VirtualBoxFoundation( Foundation ):
 
     result[ 'virtualbox_host' ] = ( lambda foundation: foundation.virtualbox_host, None )
     result[ 'virtualbox_uuid' ] = ( lambda foundation: foundation.virtualbox_uuid, None )
+    result[ 'virtualbox_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
     if write_mode is True:
       result[ 'virtualbox_uuid' ] = ( result[ 'virtualbox_uuid' ][0], lambda foundation, val: setattr( foundation, 'virtualbox_uuid', val ) )

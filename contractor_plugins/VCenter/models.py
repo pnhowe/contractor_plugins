@@ -28,7 +28,7 @@ class VCenterComplex( Complex ):
   vcenter_username = models.CharField( max_length=50 )
   vcenter_password = models.CharField( max_length=50 )
   vcenter_datacenter = models.CharField( max_length=50, help_text='set to "ha-datacenter" for ESX hosts' )
-  vcenter_cluster = models.CharField( max_length=50, blank=True, null=True )
+  vcenter_cluster = models.CharField( max_length=50, help_text='set to the hostname for ESX hosts' )
 
   @property
   def subclass( self ):

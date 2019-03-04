@@ -15,6 +15,7 @@ class create( ExternalFunction ):
     self.uuid = None
     self.in_rollback = False
     self.connection_paramaters = {}
+    self.vm_paramaters = {}
 
   @property
   def ready( self ):
@@ -52,6 +53,9 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
     except KeyError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+
+    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
+      raise ParamaterError( 'invalid name' )
 
     for key in ( 'host', 'datastore' ):
       try:
@@ -134,9 +138,6 @@ class create( ExternalFunction ):
         self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:
         pass
-
-    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
 
   def toSubcontractor( self ):
     if self.in_rollback:

@@ -16,6 +16,7 @@ class create( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = None
     self.in_rollback = False
+    self.connection_paramaters = {}
     self.vm_paramaters = {}
 
   @property
@@ -33,6 +34,13 @@ class create( ExternalFunction ):
     return self.uuid
 
   def setup( self, parms ):
+    try:
+      virtualbox_host = self.getScriptValue( 'foundation', 'virtualbox_host' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+
+    self.connection_paramaters = virtualbox_host.connection_paramaters
+
     interface_list = []
     counter = 0
     for name in INTERFACE_NAME_LIST:
@@ -50,32 +58,45 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'boot_order' ][0] = 'cd'
 
     try:
-      self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
-    except KeyError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+      vm_spec = parms[ 'vm_spec' ]
+    except KeyError:
+      raise ParamaterError( 'vm_spec', 'required' )
 
-    try:
-      self.vm_paramaters[ 'cpu_count' ] = int( parms.get( 'cpu_count', 1 ) )
-    except ( ValueError, TypeError ):
-      raise ParamaterError( 'cpu_count', 'must be an integer' )
+    if not isinstance( vm_spec, dict ):
+      raise ParamaterError( 'vm_spec', 'must be a dict' )
 
-    try:
-      self.vm_paramaters[ 'memory_size' ] = int( parms.get( 'memory_size', 1024 ) )
-    except ( ValueError, TypeError ):
-      raise ParamaterError( 'memory_size', 'must be an integer' )
+    for key in ( 'cpu_count', 'memory_size' ):
+      try:
+        self.vm_paramaters[ key ] = int( vm_spec[ key ] )
+      except KeyError:
+        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'required' )
+      except ( ValueError, TypeError ):
+        raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
 
-    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
     if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
       raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
     if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
       raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
 
+    try:
+      self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
+    except KeyError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+
+    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
+      raise ParamaterError( 'invalid name' )
+
+    for key in ( 'virtualbox_guest_type', ):
+      try:
+        self.vm_paramaters[ key[ 11: ] ] = vm_spec[ key ]
+      except KeyError:
+        pass
+
   def toSubcontractor( self ):
     if self.in_rollback:
-      return ( 'create_rollback', { 'vm': self.vm_paramaters } )
+      return ( 'create_rollback', { 'connection': self.connection_paramaters, 'vm': self.vm_paramaters } )
     else:
-      return ( 'create', { 'vm': self.vm_paramaters } )
+      return ( 'create', { 'connection': self.connection_paramaters, 'vm': self.vm_paramaters } )
 
   def fromSubcontractor( self, data ):  # TODO: really if these are missing or false, there is a problem
     if self.in_rollback:
@@ -90,12 +111,13 @@ class create( ExternalFunction ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.vm_paramaters, self.in_rollback, self.uuid )
+    return ( self.connection_paramaters, self.vm_paramaters, self.in_rollback, self.uuid )
 
   def __setstate__( self, state ):
-    self.vm_paramaters = state[0]
-    self.in_rollback = state[1]
-    self.uuid = state[2]
+    self.connection_paramaters = state[0]
+    self.vm_paramaters = state[1]
+    self.in_rollback = state[2]
+    self.uuid = state[3]
 
 
 # other functions used by the virtualbox foundation
@@ -104,6 +126,7 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
+    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
     self.done = None
 
   @property
@@ -114,18 +137,19 @@ class destroy( ExternalFunction ):
       return 'Waiting for VM Destruction'
 
   def toSubcontractor( self ):
-    return ( 'destroy', { 'uuid': self.uuid, 'name': self.name } )
+    return ( 'destroy', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.done = True
 
   def __getstate__( self ):
-    return ( self.done, self.name, self.uuid )
+    return ( self.connection_paramaters, self.done, self.name, self.uuid )
 
   def __setstate__( self, state ):
-    self.done = state[0]
-    self.name = state[1]
-    self.uuid = state[2]
+    self.connection_paramaters = state[0]
+    self.done = state[1]
+    self.name = state[2]
+    self.uuid = state[3]
 
 
 class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
@@ -133,6 +157,7 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
+    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
     self.desired_state = state
     self.curent_state = None
     self.counter = 0
@@ -155,22 +180,23 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
   def toSubcontractor( self ):
     self.counter += 1
     if self.desired_state == 'off' and self.counter < 3:  # the first two times, do it nicely, after that, the hard way
-      return ( 'set_power', { 'state': 'soft_off', 'uuid': self.uuid, 'name': self.name } )
+      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': 'soft_off', 'uuid': self.uuid, 'name': self.name } )
     else:
-      return ( 'set_power', { 'state': self.desired_state, 'uuid': self.uuid, 'name': self.name } )
+      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': self.desired_state, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.name, self.desired_state, self.curent_state, self.counter )
+    return ( self.connection_paramaters, self.uuid, self.name, self.desired_state, self.curent_state, self.counter )
 
   def __setstate__( self, state ):
-    self.uuid = state[0]
-    self.name = state[1]
-    self.desired_state = state[2]
-    self.curent_state = state[3]
-    self.counter = state[4]
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.desired_state = state[3]
+    self.curent_state = state[4]
+    self.counter = state[5]
 
 
 class power_state( ExternalFunction ):
@@ -178,6 +204,7 @@ class power_state( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
+    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
     self.state = None
 
   @property
@@ -192,18 +219,19 @@ class power_state( ExternalFunction ):
     return self.state
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'uuid': self.uuid, 'name': self.name } )
+    return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.name, self.state )
+    return ( self.connection_paramaters, self.uuid, self.name, self.state )
 
   def __setstate__( self, state ):
-    self.uuid = state[0]
-    self.name = state[1]
-    self.state = state[2]
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.state = state[3]
 
 
 class wait_for_poweroff( ExternalFunction ):
@@ -211,6 +239,7 @@ class wait_for_poweroff( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
+    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
     self.current_state = None
 
   @property
@@ -221,18 +250,19 @@ class wait_for_poweroff( ExternalFunction ):
       return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'uuid': self.uuid, 'name': self.name } )
+    return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.current_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.name, self.current_state )
+    return ( self.connection_paramaters, self.uuid, self.name, self.current_state )
 
   def __setstate__( self, state ):
-    self.uuid = state[0]
-    self.name = state[1]
-    self.current_state = state[2]
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.current_state = state[3]
 
 
 class get_interface_map( ExternalFunction ):
@@ -240,6 +270,7 @@ class get_interface_map( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
+    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
     self.interface_list = None
 
   @property
@@ -261,18 +292,19 @@ class get_interface_map( ExternalFunction ):
     return result
 
   def toSubcontractor( self ):
-    return ( 'get_interface_map', { 'uuid': self.uuid, 'name': self.name } )
+    return ( 'get_interface_map', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.interface_list = data[ 'interface_list' ]
 
   def __getstate__( self ):
-    return ( self.uuid, self.name, self.interface_list )
+    return ( self.connection_paramaters, self.uuid, self.name, self.interface_list )
 
   def __setstate__( self, state ):
-    self.uuid = state[0]
-    self.name = state[1]
-    self.interface_list = state[2]
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.interface_list = state[3]
 
 
 class set_interface_macs():
