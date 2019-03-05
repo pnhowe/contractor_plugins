@@ -14,9 +14,10 @@ sflinks = [ [ 'linux-base', 'virtualbox-vm-base' ] ]
 vm_spec = foundation.virtualbox_vmspec
 
 begin( description='VM Creation' )
-  vm = virtualbox.create( vm_spec=vm_spec )
-  foundation.virtualbox_uuid = vm[ 'uuid' ]
-  foundation.set_interface_macs( interface_list=vm[ 'interface_list' ] )
+  vm_uuid = virtualbox.create( vm_spec=vm_spec )
+  foundation.virtualbox_uuid = vm_uuid
+  interface_map = foundation.get_interface_map()
+  foundation.set_interface_macs( interface_map=interface_map )
 end
   """
 

@@ -35,6 +35,11 @@ class create( ExternalFunction ):
 
   def setup( self, parms ):
     try:
+      foundation = self.getScriptValue( 'foundation', 'foundation' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
+
+    try:
       virtualbox_host = self.getScriptValue( 'foundation', 'virtualbox_host' )
     except ValueError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
@@ -43,8 +48,12 @@ class create( ExternalFunction ):
 
     interface_list = []
     counter = 0
-    for name in INTERFACE_NAME_LIST:
-      interface_list.append( { 'name': name, 'network': 'vboxnet0', 'type': 'host' } )  # type one of 'host', 'bridge', 'nat', 'internal',  max 4 interfaces
+    for interface in foundation.networkinterface_set.all().order_by( 'physical_location' )[ :4 ]:  # max 4 interfaces
+      name_map = interface.addressblock_name_map
+      if not name_map:
+        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
+
+      interface_list.append( { 'name': interface.name, 'index': counter, 'network': name_map[ None ], 'type': 'host' } )  # type one of 'host', 'bridge', 'nat', 'internal'
       counter += 1
 
     self.vm_paramaters = {  # the defaults
@@ -312,19 +321,19 @@ class set_interface_macs():
     super().__init__( *args, **kwargs )
     self.foundation = foundation
 
-  def __call__( self, interface_list ):
-    for interface in interface_list:
+  def __call__( self, interface_map ):
+    for physical_location in interface_map:
       try:
-        iface = self.foundation.networkinterface_set.get( name=interface[ 'name' ] )
+        iface = self.foundation.networkinterface_set.get( physical_location=physical_location )
       except ObjectDoesNotExist:
-        raise ParamaterError( 'interface_list', 'interface named "{0}" not found'.format( interface[ 'name' ] ) )
+        raise ParamaterError( 'interface_map', 'interface at "{0}" not found'.format( physical_location ) )
 
-      iface.mac = interface[ 'mac' ]
+      iface.mac = interface_map[ physical_location ]
 
       try:
         iface.full_clean()
       except ValidationError as e:
-        raise ParamaterError( 'interface_list', 'Error saving interface "{0}": {1}'.format( interface[ 'name' ], e ) )
+        raise ParamaterError( 'interface_map', 'Error saving interface "{0}": {1}'.format( physical_location, e ) )
 
       iface.save()
 

@@ -9,7 +9,7 @@ from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
-from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, set_interface_macs
+from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
 cinp = CInP( 'VirtualBox', '0.1' )
 
@@ -34,7 +34,7 @@ class VirtualBoxComplex( Complex ):
   @property
   def connection_paramaters( self ):
     return {
-              'host': self.members[0].primary_ip,
+              'host': self.members.get().primary_ip,
               'username': self.virtualbox_username,
               'password': self.virtualbox_password,
             }
@@ -112,6 +112,7 @@ class VirtualBoxFoundation( Foundation ):
     result[ 'power_state' ] = lambda foundation: ( 'virtualbox', power_state( foundation ) )
     result[ 'wait_for_poweroff' ] = lambda foundation: ( 'virtualbox', wait_for_poweroff( foundation ) )
     result[ 'destroy' ] = lambda foundation: ( 'virtualbox', destroy( foundation ) )
+    result[ 'get_interface_map' ] = lambda foundation: ( 'virtualbox', get_interface_map( foundation ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
 
     return result

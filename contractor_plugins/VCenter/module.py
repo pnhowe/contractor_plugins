@@ -104,8 +104,8 @@ class create( ExternalFunction ):
       interface_list = []
       for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
         name_map = interface.addressblock_name_map
-        if name_map is None:
-          raise ParamaterError( '<internal>', 'addressblock name maping is None' )
+        if not name_map:
+          raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
 
         interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] } )
 
@@ -122,6 +122,9 @@ class create( ExternalFunction ):
     counter = 0
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
       name_map = interface.addressblock_name_map
+      if not name_map:
+        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
+
       interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ], 'type': interface_type } )
       counter += 1
 
