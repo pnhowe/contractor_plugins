@@ -83,6 +83,12 @@ def _vmSpec( foundation ):
 
   result[ 'virtualbox_guest_type' ] = structure_config.get( 'virtualbox_guest_type', 'Other' )
 
+  for key in ( 'virtualbox_network_adapter_type', ):
+    try:
+      result[ key ] = structure_config[ key ]
+    except KeyError:
+      pass
+
   return result
 
 

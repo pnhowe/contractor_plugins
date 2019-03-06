@@ -13,4 +13,4 @@ echo "Enabeling IpUtils plugin..."
 # /usr/lib/contractor/util/manage.py migrate IPUtils
 
 echo "Loading Base data..."
-/usr/lib/contractor/util/blueprintLoader ${1}usr/lib/contractor/resources/ipmi.toml
+/usr/lib/contractor/util/blueprintLoader ${1}usr/lib/contractor/resources/iputils.toml

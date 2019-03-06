@@ -46,6 +46,19 @@ class create( ExternalFunction ):
 
     self.connection_paramaters = virtualbox_host.connection_paramaters
 
+    try:
+      vm_spec = parms[ 'vm_spec' ]
+    except KeyError:
+      raise ParamaterError( 'vm_spec', 'required' )
+
+    if not isinstance( vm_spec, dict ):
+      raise ParamaterError( 'vm_spec', 'must be a dict' )
+
+    try:
+      adapter_type = vm_spec[ 'virtualbox_network_adapter_type' ]
+    except KeyError:
+      adapter_type = 'I82540EM'
+
     interface_list = []
     counter = 0
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' )[ :4 ]:  # max 4 interfaces
@@ -53,7 +66,7 @@ class create( ExternalFunction ):
       if not name_map:
         raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
 
-      interface_list.append( { 'name': interface.name, 'index': counter, 'network': name_map[ None ], 'type': 'host' } )  # type one of 'host', 'bridge', 'nat', 'internal'
+      interface_list.append( { 'name': interface.name, 'index': counter, 'network': name_map[ None ], 'type': 'host', 'adapter_type': adapter_type } )  # type one of 'host', 'bridge', 'nat', 'internal'
       counter += 1
 
     self.vm_paramaters = {  # the defaults
@@ -65,14 +78,6 @@ class create( ExternalFunction ):
     if False:  # boot from iso instead
       self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
       self.vm_paramaters[ 'boot_order' ][0] = 'cd'
-
-    try:
-      vm_spec = parms[ 'vm_spec' ]
-    except KeyError:
-      raise ParamaterError( 'vm_spec', 'required' )
-
-    if not isinstance( vm_spec, dict ):
-      raise ParamaterError( 'vm_spec', 'must be a dict' )
 
     for key in ( 'cpu_count', 'memory_size' ):
       try:
