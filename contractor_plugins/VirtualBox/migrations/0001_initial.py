@@ -15,15 +15,17 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='VirtualBoxComplex',
             fields=[
-                ('complex_ptr', models.OneToOneField(primary_key=True, auto_created=True, parent_link=True, serialize=False, to='Building.Complex')),
+                ('complex_ptr', models.OneToOneField(serialize=False, auto_created=True, to='Building.Complex', primary_key=True, parent_link=True)),
+                ('virtualbox_username', models.CharField(max_length=50)),
+                ('virtualbox_password', models.CharField(max_length=50)),
             ],
             bases=('Building.complex',),
         ),
         migrations.CreateModel(
             name='VirtualBoxFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(primary_key=True, auto_created=True, parent_link=True, serialize=False, to='Building.Foundation')),
-                ('virtualbox_uuid', models.CharField(null=True, blank=True, max_length=36)),
+                ('foundation_ptr', models.OneToOneField(serialize=False, auto_created=True, to='Building.Foundation', primary_key=True, parent_link=True)),
+                ('virtualbox_uuid', models.CharField(blank=True, null=True, max_length=36)),
                 ('virtualbox_host', models.ForeignKey(to='VirtualBox.VirtualBoxComplex', on_delete=django.db.models.deletion.PROTECT)),
             ],
             bases=('Building.foundation',),

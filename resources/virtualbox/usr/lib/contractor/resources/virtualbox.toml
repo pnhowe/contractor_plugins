@@ -4,17 +4,20 @@ sflinks = [ [ 'linux-base', 'virtualbox-vm-base' ] ]
   description = 'Base VirtualBox VM'
   scripts = { 'create' = 'virtualbox-vm-create', 'destroy' = 'virtualbox-vm-destroy' }
   foundation_types = [ 'VirtualBox' ]
-  config_values = { 'memory_size' = 512, 'cpu_count' = 1 }
+  config_values = { 'memory_size' = 512, 'cpu_count' = 1, virtualbox_guest_type = 'Other' }
   template = {}
   physical_interface_names = [ 'eth0' ]
 
 [ script.virtualbox-vm-create ]
   description = 'Create VirtualBox VM'
   script = """# Create VirualBox VM
+vm_spec = foundation.virtualbox_vmspec
+
 begin( description='VM Creation' )
-  vm = virtualbox.create()
-  foundation.virtualbox_uuid = vm[ 'uuid' ]
-  foundation.set_interface_macs( interface_list=vm[ 'interface_list' ] )
+  vm_uuid = virtualbox.create( vm_spec=vm_spec )
+  foundation.virtualbox_uuid = vm_uuid
+  interface_map = foundation.get_interface_map()
+  foundation.set_interface_macs( interface_map=interface_map )
 end
   """
 

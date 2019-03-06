@@ -15,6 +15,7 @@ class create( ExternalFunction ):
     self.uuid = None
     self.in_rollback = False
     self.connection_paramaters = {}
+    self.vm_paramaters = {}
 
   @property
   def ready( self ):
@@ -52,6 +53,9 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
     except KeyError as e:
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+
+    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
+      raise ParamaterError( 'invalid name' )
 
     for key in ( 'host', 'datastore' ):
       try:
@@ -100,8 +104,8 @@ class create( ExternalFunction ):
       interface_list = []
       for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
         name_map = interface.addressblock_name_map
-        if name_map is None:
-          raise ParamaterError( '<internal>', 'addressblock name maping is None' )
+        if not name_map:
+          raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
 
         interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] } )
 
@@ -118,6 +122,9 @@ class create( ExternalFunction ):
     counter = 0
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
       name_map = interface.addressblock_name_map
+      if not name_map:
+        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
+
       interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ], 'type': interface_type } )
       counter += 1
 
@@ -134,9 +141,6 @@ class create( ExternalFunction ):
         self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:
         pass
-
-    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
 
   def toSubcontractor( self ):
     if self.in_rollback:
