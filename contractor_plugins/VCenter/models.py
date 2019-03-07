@@ -177,10 +177,17 @@ class VCenterFoundation( Foundation ):
 
   @property
   def can_auto_locate( self ):
-    try:
-      return self.vcenter_host.state == 'built' and self.structure.auto_build
-    except AttributeError:
+    if not self.structure.auto_build:
       return False
+
+    if self.vcenter_host.state != 'built':
+      return False
+
+    for interface in self.networkinterface_set.all():
+      if not interface.addressblock_name_map:
+        return False
+
+    return True
 
   @property
   def complex( self ):
