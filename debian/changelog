@@ -1,3 +1,9 @@
+contractor-plugins (0.3-1) xenial; urgency=medium
+
+  * goes with contractor 0.3
+
+ -- Peter Howe <pnhowe@gmail.com>  Wed, 06 Mar 2019 21:59:36 -0700
+
 contractor-plugins (0.2-1) xenial; urgency=medium
 
   * goes with contractor 0.2

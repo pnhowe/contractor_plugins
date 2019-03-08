@@ -144,7 +144,10 @@ class VirtualBoxFoundation( Foundation ):
 
   @property
   def can_auto_locate( self ):
-    if not self.structure.auto_build:
+    try:
+      if not self.structure.auto_build:
+        return False
+    except AttributeError:
       return False
 
     if self.virtualbox_host.state != 'built':
