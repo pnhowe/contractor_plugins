@@ -14,6 +14,8 @@ clean:
 	$(RM) -fr build
 	$(RM) -f dpkg
 	$(RM) -fr htmlcov
+	$(RM) *.respkg
+	$(RM) respkg
 	dh_clean || true
 
 dist-clean: clean
