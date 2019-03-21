@@ -358,6 +358,63 @@ class datastore_list( ExternalFunction ):
     self.result = state[6]
 
 
+class network_list( ExternalFunction ):
+  def __init__( self, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.result = None
+    self.connection_paramaters = {}
+    self.datacenter = None
+    self.cluster = None
+    self.host = None
+    self.min_free_space = None
+    self.name_regex = None
+
+  @property
+  def ready( self ):
+    if self.result is not None:
+      return True
+    else:
+      return 'Waiting for Network List'
+
+  @property
+  def value( self ):
+    return self.result
+
+  def setup( self, parms ):
+    try:
+      vcenter_host = self.getScriptValue( 'foundation', 'vcenter_host' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+
+    self.connection_paramaters = vcenter_host.connection_paramaters
+    self.datacenter = vcenter_host.vcenter_datacenter
+    self.cluster = vcenter_host.vcenter_cluster
+
+    try:
+      self.host = parms.get( 'host' )
+    except AttributeError as e:
+      raise ParamaterError( 'host', 'Required' )
+
+    self.name_regex = parms.get( 'name_regex', None )
+
+  def toSubcontractor( self ):
+    return ( 'network_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'host': self.host, 'name_regex': self.name_regex } )
+
+  def fromSubcontractor( self, data ):
+    self.result = data[ 'network_list' ]
+
+  def __getstate__( self ):
+    return ( self.connection_paramaters, self.datacenter, self.cluster, self.host, self.name_regex, self.result )
+
+  def __setstate__( self, state ):
+    self.connection_paramaters = state[0]
+    self.datacenter = state[1]
+    self.cluster = state[2]
+    self.host = state[3]
+    self.name_regex = state[4]
+    self.result = state[5]
+
+
 # other functions used by the virtualbox foundation
 class destroy( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):

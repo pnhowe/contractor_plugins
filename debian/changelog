@@ -1,4 +1,4 @@
-contractor-plugins (0.3.1-1) UNRELEASED; urgency=medium
+contractor-plugins (0.3.1-1) xenial; urgency=medium
 
   * Fixed can_auto_start when foundation does not have a structure
 
