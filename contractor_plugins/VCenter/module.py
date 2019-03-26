@@ -8,6 +8,8 @@ NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
 
 
+# TODO: a complex "takeover" functoin that the VCA can call after it is set up (as a dependancy?) to become the vcenter_host for the complex
+
 # exported functions
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
@@ -89,6 +91,7 @@ class create( ExternalFunction ):
     ova = vm_spec.get( 'ova', None )
     if ova is not None:
       self.vm_paramaters[ 'ova' ] = ova
+      self.vm_paramaters[ 'boot_order' ] = [ 'hdd' ]
 
       try:
         self.vm_paramaters[ 'disk_provisioning' ] = self.vm_paramaters[ 'disk_provisioning' ]
@@ -112,7 +115,37 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'interface_list' ] = interface_list
       return
 
-    # not OVA specify all the things
+    # is this an template deploy, if so, short cut, just deploy it
+    template = vm_spec.get( 'template', None )
+    if template is not None:
+      self.vm_paramaters[ 'template' ] = template
+      self.vm_paramaters[ 'boot_order' ] = [ 'hdd' ]
+
+      for key in ( 'vcenter_hostname', 'vcenter_domain', 'vcenter_dnsserver_list', 'vcenter_dnssuffix_list', 'vcenter_property_map' ):
+        try:
+          self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+        except KeyError:
+          pass
+
+      interface_list = []
+      for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
+        name_map = interface.addressblock_name_map
+        if not name_map:
+          raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
+
+        address = interface.config[ 'address_list' ][0]
+
+        item = { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] }
+        item[ 'address' ] = address[ 'address' ]
+        item[ 'netmask' ] = address[ 'netmask' ]
+        if address[ 'gateway' ] is not None:
+          item[ 'gateway' ] = address[ 'gateway' ]
+        interface_list.append( item )
+
+      self.vm_paramaters[ 'interface_list' ] = interface_list
+      return
+
+    # not OVA/Template do scratch
     try:
       interface_type = vm_spec[ 'vcenter_network_interface_class' ]
     except KeyError:
@@ -136,7 +169,7 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
       self.vm_paramaters[ 'boot_order' ] = [ 'cd', 'net', 'hdd' ]
 
-    for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage' ):
+    for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage', 'vcenter_property_map' ):
       try:
         self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:

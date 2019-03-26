@@ -28,7 +28,7 @@ class VCenterComplex( Complex ):
   vcenter_username = models.CharField( max_length=50 )
   vcenter_password = models.CharField( max_length=50 )
   vcenter_datacenter = models.CharField( max_length=50, help_text='set to "ha-datacenter" for ESX hosts' )
-  vcenter_cluster = models.CharField( max_length=50, help_text='set to the hostname for ESX hosts' )
+  vcenter_cluster = models.CharField( max_length=50, help_text='set to the hostname (ie: "localhost.") for ESX hosts' )
 
   @property
   def subclass( self ):
@@ -102,7 +102,7 @@ def _vmSpec( foundation ):
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
   result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
 
-  try:
+  if 'ova' in structure_config:
     result[ 'ova' ] = structure_config[ 'ova' ]
 
     for key in ( 'vcenter_property_map', 'vcenter_deployment_option', 'vcenter_ip_protocol' ):
@@ -111,10 +111,19 @@ def _vmSpec( foundation ):
       except KeyError:
         pass
 
-  except KeyError:  # non OVA deploy
+  if 'template' in structure_config:
+    result[ 'template' ] = structure_config[ 'template' ]
+
+    for key in ( 'vcenter_hostname', 'vcenter_domain', 'vcenter_dnsserver_list', 'vcenter_dnssuffix_list', 'vcenter_property_map' ):
+      try:
+        result[ key ] = structure_config[ key ]
+      except KeyError:
+        pass
+
+  else:
     result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
 
-    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
+    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class', 'vcenter_property_map' ):
       try:
         result[ key ] = structure_config[ key ]
       except KeyError:
