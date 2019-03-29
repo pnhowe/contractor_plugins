@@ -661,6 +661,71 @@ class set_interface_macs():
       iface.save()
 
 
+class execute( ExternalFunction ):
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.uuid = foundation.vcenter_uuid
+    self.name = foundation.locator
+    self.connection_paramaters = foundation.vcenter_host.connection_paramaters
+    self.username = None
+    self.password = None
+    self.dir = '/'
+    self.program = None
+    self.args = None
+    self.timeout = 300
+    self.rc = None
+
+  @property
+  def ready( self ):
+    if self.rc is not None:
+      return True
+    else:
+      return 'Waiting for Execution'
+
+  def setup( self, parms ):
+    for name in ( 'username', 'password', 'program', 'args' ):
+      try:
+        setattr( self, name, parms[ name ] )
+      except KeyError:
+        raise ParamaterError( name, 'required' )
+
+      try:
+        self.dir = parms[ 'dir' ]
+      except KeyError:
+        pass
+
+      try:
+        self.timeout = int( parms[ 'timeout' ] )
+      except ValueError:
+        raise ParamaterError( 'timeout', 'must be valid number' )
+      except KeyError:
+        pass
+
+  @property
+  def value( self ):
+    return self.rc
+
+  def toSubcontractor( self ):
+    return ( 'execute', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': self.program, 'args': self.args, 'dir': self.dir } )
+
+  def fromSubcontractor( self, data ):
+    self.rc = data[ 'rc' ]
+
+  def __getstate__( self ):
+    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.program, self.args, self.dir, self.rc )
+
+  def __setstate__( self, state ):
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.username = state[3]
+    self.password = state[4]
+    self.program = state[5]
+    self.args = state[6]
+    self.dir = state[7]
+    self.rc = state[8]
+
+
 # plugin exports
 
 TSCRIPT_NAME = 'vcenter'
