@@ -10,7 +10,7 @@ from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
 
-from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
+from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs, execute
 
 cinp = CInP( 'VCenter', '0.1' )
 
@@ -59,7 +59,7 @@ class VCenterComplex( Complex ):
 
   def newFoundation( self, hostname ):
     foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
-    foundation.vcenter_host = self
+    foundation.vcenter_complex = self
     foundation.full_clean()
     foundation.save()
 
@@ -134,14 +134,14 @@ def _vmSpec( foundation ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VCenterFoundation( Foundation ):
-  vcenter_host = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
+  vcenter_complex = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
   vcenter_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of vcenter clusters
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VCenterFoundation, VCenterFoundation ).getTscriptValues( write_mode )
 
-    result[ 'vcenter_host' ] = ( lambda foundation: foundation.vcenter_host, None )
+    result[ 'vcenter_complex' ] = ( lambda foundation: foundation.vcenter_complex, None )
     result[ 'vcenter_uuid' ] = ( lambda foundation: foundation.vcenter_uuid, None )
     result[ 'vcenter_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
@@ -160,15 +160,16 @@ class VCenterFoundation( Foundation ):
     result[ 'destroy' ] = lambda foundation: ( 'vcenter', destroy( foundation ) )
     result[ 'get_interface_map' ] = lambda foundation: ( 'vcenter', get_interface_map( foundation ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
+    result[ 'execute' ] = lambda foundation: ( 'vcenter', execute( foundation ) )
 
     return result
 
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_vcenter_uuid': self.vcenter_uuid } )
-    result.update( { '_vcenter_host': self.vcenter_host.name } )
-    result.update( { '_vcenter_datacenter': self.vcenter_host.vcenter_datacenter } )
-    result.update( { '_vcenter_cluster': self.vcenter_host.vcenter_cluster } )
+    result.update( { '_vcenter_complex': self.vcenter_complex.name } )
+    result.update( { '_vcenter_datacenter': self.vcenter_complex.vcenter_datacenter } )
+    result.update( { '_vcenter_cluster': self.vcenter_complex.vcenter_cluster } )
 
     return result
 
@@ -192,7 +193,7 @@ class VCenterFoundation( Foundation ):
     except AttributeError:
       return False
 
-    if self.vcenter_host.state != 'built':
+    if self.vcenter_complex.state != 'built':
       return False
 
     for interface in self.networkinterface_set.all():
@@ -203,7 +204,7 @@ class VCenterFoundation( Foundation ):
 
   @property
   def complex( self ):
-    return self.vcenter_host
+    return self.vcenter_complex
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod

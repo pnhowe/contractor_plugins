@@ -40,16 +40,16 @@ class create( ExternalFunction ):
       raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
 
     try:
-      vcenter_host = self.getScriptValue( 'foundation', 'vcenter_host' )
+      vcenter_cluster = self.getScriptValue( 'foundation', 'vcenter_cluster' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_cluster: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_host.connection_paramaters
+    self.connection_paramaters = vcenter_cluster.connection_paramaters
 
     self.vm_paramaters = {}
 
-    self.vm_paramaters[ 'datacenter' ] = vcenter_host.vcenter_datacenter
-    self.vm_paramaters[ 'cluster' ] = vcenter_host.vcenter_cluster
+    self.vm_paramaters[ 'datacenter' ] = vcenter_cluster.vcenter_datacenter
+    self.vm_paramaters[ 'cluster' ] = vcenter_cluster.vcenter_cluster
 
     try:
       self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
@@ -227,13 +227,13 @@ class host_list( ExternalFunction ):
 
   def setup( self, parms ):
     try:
-      vcenter_host = self.getScriptValue( 'foundation', 'vcenter_host' )
+      vcenter_cluster = self.getScriptValue( 'foundation', 'vcenter_cluster' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_cluster: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_host.connection_paramaters
-    self.datacenter = vcenter_host.vcenter_datacenter
-    self.cluster = vcenter_host.vcenter_cluster
+    self.connection_paramaters = vcenter_cluster.connection_paramaters
+    self.datacenter = vcenter_cluster.vcenter_datacenter
+    self.cluster = vcenter_cluster.vcenter_cluster
 
     for key in ( 'min_memory', 'min_cpu' ):  # memory in MB
       try:
@@ -286,12 +286,12 @@ class create_datastore( ExternalFunction ):
 
   def setup( self, parms ):
     try:
-      vcenter_host = self.getScriptValue( 'foundation', 'vcenter_host' )
+      vcenter_cluster = self.getScriptValue( 'foundation', 'vcenter_cluster' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_cluster: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_host.connection_paramaters
-    self.datacenter = vcenter_host.vcenter_datacenter
+    self.connection_paramaters = vcenter_cluster.connection_paramaters
+    self.datacenter = vcenter_cluster.vcenter_datacenter
 
     try:
       self.host = self.getScriptValue( 'config', 'vcenter_hostname' )
@@ -350,13 +350,13 @@ class datastore_list( ExternalFunction ):
 
   def setup( self, parms ):
     try:
-      vcenter_host = self.getScriptValue( 'foundation', 'vcenter_host' )
+      vcenter_cluster = self.getScriptValue( 'foundation', 'vcenter_cluster' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_cluster: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_host.connection_paramaters
-    self.datacenter = vcenter_host.vcenter_datacenter
-    self.cluster = vcenter_host.vcenter_cluster
+    self.connection_paramaters = vcenter_cluster.connection_paramaters
+    self.datacenter = vcenter_cluster.vcenter_datacenter
+    self.cluster = vcenter_cluster.vcenter_cluster
 
     try:
       self.host = parms.get( 'host' )
@@ -415,13 +415,13 @@ class network_list( ExternalFunction ):
 
   def setup( self, parms ):
     try:
-      vcenter_host = self.getScriptValue( 'foundation', 'vcenter_host' )
+      vcenter_cluster = self.getScriptValue( 'foundation', 'vcenter_cluster' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_cluster: {0}'.format( e ) )
 
-    self.connection_paramaters = vcenter_host.connection_paramaters
-    self.datacenter = vcenter_host.vcenter_datacenter
-    self.cluster = vcenter_host.vcenter_cluster
+    self.connection_paramaters = vcenter_cluster.connection_paramaters
+    self.datacenter = vcenter_cluster.vcenter_datacenter
+    self.cluster = vcenter_cluster.vcenter_cluster
 
     try:
       self.host = parms.get( 'host' )
@@ -454,7 +454,7 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_host.connection_paramaters
+    self.connection_paramaters = foundation.vcenter_cluster.connection_paramaters
     self.done = None
 
   @property
@@ -485,7 +485,7 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_host.connection_paramaters
+    self.connection_paramaters = foundation.vcenter_cluster.connection_paramaters
     self.desired_state = state
     self.curent_state = None
     self.counter = 0
@@ -532,7 +532,7 @@ class power_state( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_host.connection_paramaters
+    self.connection_paramaters = foundation.vcenter_cluster.connection_paramaters
     self.state = None
 
   @property
@@ -567,7 +567,7 @@ class wait_for_poweroff( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_host.connection_paramaters
+    self.connection_paramaters = foundation.vcenter_cluster.connection_paramaters
     self.current_state = None
 
   @property
@@ -599,7 +599,7 @@ class get_interface_map( ExternalFunction ):
     self.foundation = foundation
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_host.connection_paramaters
+    self.connection_paramaters = foundation.vcenter_cluster.connection_paramaters
     self.interface_list = None
 
   @property
@@ -666,13 +666,13 @@ class execute( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.vcenter_host.connection_paramaters
+    self.connection_paramaters = foundation.vcenter_cluster.connection_paramaters
     self.username = None
     self.password = None
     self.dir = '/'
-    self.program = None
-    self.args = None
+    self.command = None
     self.timeout = 300
+    self.expected_rc = 0
     self.rc = None
 
   @property
@@ -683,7 +683,7 @@ class execute( ExternalFunction ):
       return 'Waiting for Execution'
 
   def setup( self, parms ):
-    for name in ( 'username', 'password', 'program', 'args' ):
+    for name in ( 'username', 'password', 'command' ):
       try:
         setattr( self, name, parms[ name ] )
       except KeyError:
@@ -694,25 +694,31 @@ class execute( ExternalFunction ):
       except KeyError:
         pass
 
-      try:
-        self.timeout = int( parms[ 'timeout' ] )
-      except ValueError:
-        raise ParamaterError( 'timeout', 'must be valid number' )
-      except KeyError:
-        pass
+      for name in ( 'timeout', 'expected_rc' ):
+        try:
+          setattr( self, name, int( parms[ name ] ) )
+        except ValueError:
+          raise ParamaterError( name, 'must be valid integer' )
+        except KeyError:
+          pass
 
   @property
   def value( self ):
-    return self.rc
+    if self.rc != self.expected_rc:
+      return Exception( 'Command returned "{0}", expected "{1}"'.format( self.rc, self.expected_rc ) )
+    else:
+      return True
 
   def toSubcontractor( self ):
-    return ( 'execute', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': self.program, 'args': self.args, 'dir': self.dir } )
+    program = '/bin/sh'
+    args = '-c {0}'.format( self.command )
+    return ( 'execute', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': program, 'args': args, 'dir': self.dir, 'timeout': self.timeout } )
 
   def fromSubcontractor( self, data ):
     self.rc = data[ 'rc' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.program, self.args, self.dir, self.rc )
+    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.command, self.dir, self.expected_rc, self.rc )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
@@ -720,9 +726,9 @@ class execute( ExternalFunction ):
     self.name = state[2]
     self.username = state[3]
     self.password = state[4]
-    self.program = state[5]
-    self.args = state[6]
-    self.dir = state[7]
+    self.command = state[5]
+    self.dir = state[6]
+    self.expected_rc = state[7]
     self.rc = state[8]
 
 
