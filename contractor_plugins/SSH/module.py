@@ -9,6 +9,7 @@ class execute( ExternalFunction ):
     self.password = None
     self.command = None
     self.timeout = 300
+    self.expected_rc = 0
     self.rc = None
 
   @property
@@ -20,7 +21,10 @@ class execute( ExternalFunction ):
 
   @property
   def value( self ):
-    return self.rc
+    if self.rc != self.expected_rc:
+      return Exception( 'Command returned "{0}", expected "{1}"'.format( self.rc, self.expected_rc ) )
+    else:
+      return True
 
   def setup( self, parms ):
     for name in ( 'host', 'command' ):
@@ -35,12 +39,13 @@ class execute( ExternalFunction ):
       except KeyError:
         pass
 
-    try:
-      self.timeout = int( parms[ 'timeout' ] )
-    except ValueError:
-      raise ParamaterError( 'timeout', 'must be valid number' )
-    except KeyError:
-      pass
+    for name in ( 'timeout', 'expected_rc' ):
+      try:
+        setattr( self, name, int( parms[ name ] ) )
+      except ValueError:
+        raise ParamaterError( name, 'must be valid integer' )
+      except KeyError:
+        pass
 
   def toSubcontractor( self ):
     return ( 'execute', { 'host': self.host, 'username': self.username, 'password': self.password, 'command': self.command, 'timeout': self.timeout } )
@@ -49,7 +54,7 @@ class execute( ExternalFunction ):
     self.rc = data[ 'rc' ]
 
   def __getstate__( self ):
-    return ( self.host, self.username, self.password, self.command, self.timeout, self.rc  )
+    return ( self.host, self.username, self.password, self.command, self.timeout, self.expected_rc, self.rc )
 
   def __setstate__( self, state ):
     self.host = state[0]
@@ -57,7 +62,8 @@ class execute( ExternalFunction ):
     self.password = state[2]
     self.command = state[3]
     self.timeout = state[4]
-    self.rc = state[5]
+    self.expected_rc = state[5]
+    self.rc = state[6]
 
 
 class file( ExternalFunction ):
