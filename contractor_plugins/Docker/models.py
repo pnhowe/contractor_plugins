@@ -133,13 +133,6 @@ class DockerFoundation( Foundation ):
     return [ 'Docker' ]
 
   @property
-  def can_auto_locate( self ):
-    try:
-      return self.docker_host.state == 'built' and self.structure.auto_build
-    except AttributeError:
-      return False
-
-  @property
   def complex( self ):
     return self.docker_host
 

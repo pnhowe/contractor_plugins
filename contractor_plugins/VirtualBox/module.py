@@ -42,7 +42,7 @@ class create( ExternalFunction ):
     try:
       virtualbox_host = self.getScriptValue( 'foundation', 'virtualbox_host' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation vcenter_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation virtualbox_host: {0}'.format( e ) )
 
     self.connection_paramaters = virtualbox_host.connection_paramaters
 

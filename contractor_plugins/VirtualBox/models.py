@@ -44,6 +44,7 @@ class VirtualBoxComplex( Complex ):
     foundation.virtualbox_host = self
     foundation.full_clean()
     foundation.save()
+    foundation.setLocated()
 
     iface = RealNetworkInterface( name='eth0', is_provisioning=True )
     iface.foundation = foundation
@@ -141,23 +142,6 @@ class VirtualBoxFoundation( Foundation ):
   @property
   def class_list( self ):
     return [ 'VM', 'VirtualBox' ]
-
-  @property
-  def can_auto_locate( self ):
-    try:
-      if not self.structure.auto_build:
-        return False
-    except AttributeError:
-      return False
-
-    if self.virtualbox_host.state != 'built':
-      return False
-
-    for interface in self.networkinterface_set.all():
-      if not interface.addressblock_name_map:
-        return False
-
-    return True
 
   @property
   def complex( self ):

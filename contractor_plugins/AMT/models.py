@@ -58,13 +58,6 @@ class AMTFoundation( Foundation ):  # , Networked ):
   def class_list( self ):
     return [ 'Physical', 'AMT' ]
 
-  @property
-  def can_auto_locate( self ):
-    try:
-      return self.structure.auto_build
-    except AttributeError:
-      return False
-
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
   def filter_site( site ):

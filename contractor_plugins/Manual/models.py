@@ -91,13 +91,6 @@ class ManualFoundation( Foundation ):
   def class_list( self ):
     return [ 'Metal', 'VM', 'Container', 'Switch', 'Manual' ]
 
-  @property
-  def can_auto_locate( self ):
-    try:
-      return self.structure.auto_build
-    except AttributeError:
-      return False
-
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
   def filter_site( site ):
@@ -133,10 +126,6 @@ class ManualComplexedFoundation( Foundation ):
   @property
   def class_list( self ):
     return [ 'ManualComplex' ]
-
-  @property
-  def can_auto_locate( self ):
-    return self.complex_host.state == 'built' and self.structure.auto_build
 
   @property
   def complex( self ):

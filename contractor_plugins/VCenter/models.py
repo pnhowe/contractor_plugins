@@ -62,6 +62,7 @@ class VCenterComplex( Complex ):
     foundation.vcenter_complex = self
     foundation.full_clean()
     foundation.save()
+    foundation.setLocated()
 
     iface = RealNetworkInterface( name='eth0', is_provisioning=True )
     iface.foundation = foundation
@@ -184,23 +185,6 @@ class VCenterFoundation( Foundation ):
   @property
   def class_list( self ):
     return [ 'VM', 'VCenter' ]
-
-  @property
-  def can_auto_locate( self ):
-    try:
-      if not self.structure.auto_build:
-        return False
-    except AttributeError:
-      return False
-
-    if self.vcenter_complex.state != 'built':
-      return False
-
-    for interface in self.networkinterface_set.all():
-      if not interface.addressblock_name_map:
-        return False
-
-    return True
 
   @property
   def complex( self ):
