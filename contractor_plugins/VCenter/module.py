@@ -152,14 +152,12 @@ class create( ExternalFunction ):
       interface_type = 'E1000'
 
     interface_list = []
-    counter = 0
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
       name_map = interface.addressblock_name_map
       if not name_map:
         raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
 
       interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ], 'type': interface_type } )
-      counter += 1
 
     self.vm_paramaters[ 'disk_list' ] = [ { 'size': 10, 'name': 'sda', 'type': self.vm_paramaters.get( 'disk_provisioning', 'thin' ) } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
     self.vm_paramaters[ 'interface_list' ] = interface_list
@@ -448,7 +446,7 @@ class network_list( ExternalFunction ):
     self.result = state[5]
 
 
-# other functions used by the virtualbox foundation
+# other functions used by the vcenter foundation
 class destroy( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )

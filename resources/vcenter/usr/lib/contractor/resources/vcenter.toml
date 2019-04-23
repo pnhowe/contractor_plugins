@@ -30,7 +30,7 @@ end
 """
 
 [ script.vcenter-vm-destroy ]
-  description = 'Destroy Generi VCenter VM'
+  description = 'Destroy VCenter VM'
   script = """# Destory VCenter VM
 begin( description='VM Destruction' )
   foundation.power_off()

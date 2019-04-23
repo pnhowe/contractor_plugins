@@ -35,12 +35,12 @@ pause( msg='Do the thing, then Resume' )
 
 [ script.manual-foundation-create ]
   description = 'Create Manual Server'
-  script = """# Test and Configure Generic Manual Server
+  script = """# Test and Configure Manual Server
 pause( msg='Resume when Server is Powered Off' )
 """
 
 [ script.manual-foundation-destroy ]
   description = 'Destroy Manual Server'
-  script = """# Decommission Generic Manual Server
+  script = """# Decommission Manual Server
 pause( msg='Resume script when Server is Off' )
 """
