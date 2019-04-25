@@ -6,7 +6,7 @@ echo "Got base path at '$1'"
 echo "Got curent version of '$2'"
 echo "Got previsous version of '$3'"
 
-echo "Enabeling Vcenter plugin..."
+echo "Enabeling VCenter plugin..."
 /usr/lib/contractor/util/pluginctl enable /usr/lib/python3/dist-packages/contractor_plugins/VCenter
 
 echo "Loading Schema..."

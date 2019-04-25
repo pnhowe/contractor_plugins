@@ -40,11 +40,11 @@ class create( ExternalFunction ):
       raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
 
     try:
-      virtualbox_host = self.getScriptValue( 'foundation', 'virtualbox_host' )
+      virtualbox_complex = self.getScriptValue( 'foundation', 'virtualbox_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation virtualbox_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation virtualbox_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = virtualbox_host.connection_paramaters
+    self.connection_paramaters = virtualbox_complex.connection_paramaters
 
     try:
       vm_spec = parms[ 'vm_spec' ]
@@ -140,7 +140,7 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
+    self.connection_paramaters = foundation.virtualbox_complex.connection_paramaters
     self.done = None
 
   @property
@@ -171,7 +171,7 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
+    self.connection_paramaters = foundation.virtualbox_complex.connection_paramaters
     self.desired_state = state
     self.curent_state = None
     self.counter = 0
@@ -218,7 +218,7 @@ class power_state( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
+    self.connection_paramaters = foundation.virtualbox_complex.connection_paramaters
     self.state = None
 
   @property
@@ -253,7 +253,7 @@ class wait_for_poweroff( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
+    self.connection_paramaters = foundation.virtualbox_complex.connection_paramaters
     self.current_state = None
 
   @property
@@ -284,7 +284,7 @@ class get_interface_map( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.virtualbox_host.connection_paramaters
+    self.connection_paramaters = foundation.virtualbox_complex.connection_paramaters
     self.interface_list = None
 
   @property

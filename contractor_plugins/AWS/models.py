@@ -57,6 +57,10 @@ class AWSEC2Foundation( Foundation ):
     return self
 
   @property
+  def state( self ):
+    return 'built'
+
+  @property
   def type( self ):
     return 'AWSEC2'
 

@@ -41,7 +41,7 @@ class VirtualBoxComplex( Complex ):
 
   def newFoundation( self, hostname ):
     foundation = VirtualBoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
-    foundation.virtualbox_host = self
+    foundation.virtualbox_complex = self
     foundation.full_clean()
     foundation.save()
     foundation.setLocated()
@@ -95,14 +95,14 @@ def _vmSpec( foundation ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
-  virtualbox_host = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
+  virtualbox_complex = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
   virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VirtualBoxFoundation, VirtualBoxFoundation ).getTscriptValues( write_mode )
 
-    result[ 'virtualbox_host' ] = ( lambda foundation: foundation.virtualbox_host, None )
+    result[ 'virtualbox_complex' ] = ( lambda foundation: foundation.virtualbox_complex, None )
     result[ 'virtualbox_uuid' ] = ( lambda foundation: foundation.virtualbox_uuid, None )
     result[ 'virtualbox_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
@@ -127,7 +127,7 @@ class VirtualBoxFoundation( Foundation ):
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_virtualbox_uuid': self.virtualbox_uuid } )
-    result.update( { '_virtualbox_host': self.virtualbox_host.name } )
+    result.update( { '_virtualbox_complex': self.virtualbox_complex.name } )
 
     return result
 
@@ -145,7 +145,7 @@ class VirtualBoxFoundation( Foundation ):
 
   @property
   def complex( self ):
-    return self.virtualbox_host
+    return self.virtualbox_complex
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod
@@ -161,8 +161,8 @@ class VirtualBoxFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.site.pk != self.virtualbox_host.site.pk:
-      errors[ 'site' ] = 'Site must match the virtualbox_host\'s site'
+    if self.site.pk != self.virtualbox_complex.site.pk:
+      errors[ 'site' ] = 'Site must match the virtualbox_complex\'s site'
 
     if errors:
       raise ValidationError( errors )

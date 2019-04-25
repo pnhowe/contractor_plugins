@@ -18,7 +18,7 @@ FOUNDATION_SUBCLASS_LIST.append( 'azurefoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'azurecomplex' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.Azure.module' )
 
-uuid_regex = re.compile( '^[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}$' )
+uuid_regex = re.compile( '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' )
 resource_group_regex = re.compile( '^[-\w\._\(\)]+$' )  # from https://docs.microsoft.com/en-us/rest/api/resources/resourcegroups/createorupdate
 
 
@@ -37,7 +37,7 @@ class AzureComplex( Complex ):
 
   @property
   def state( self ):
-    return 'planned'
+    return 'built'
 
   @property
   def type( self ):
@@ -54,7 +54,7 @@ class AzureComplex( Complex ):
 
   def newFoundation( self, hostname ):
     foundation = AzureFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='azure-vm-base' ), locator=hostname )
-    foundation.vcenter_complex = self
+    foundation.azure_complex = self
     foundation.full_clean()
     foundation.save()
     foundation.setLocated()
@@ -105,7 +105,7 @@ class AzureComplex( Complex ):
       raise ValidationError( errors )
 
   def __str__( self ):
-    return 'VCenterComplex {0}'.format( self.pk )
+    return 'AzureComplex {0}'.format( self.pk )
 
 
 def _vmSpec( foundation ):
@@ -114,8 +114,6 @@ def _vmSpec( foundation ):
   structure_config = getConfig( foundation.structure )
   structure_config = mergeValues( structure_config )
 
-  result[ 'azure_resource_group' ] = structure_config.get( 'azure_location', 'contractor' )
-  result[ 'azure_location' ] = structure_config.get( 'azure_location', 'westus' )
   result[ 'azure_size' ] = structure_config.get( 'azure_size', 'Standard_D1_v2' )
 
   for key in ( 'azure_admin_username', 'azure_admin_password', 'azure_image' ):
@@ -136,7 +134,7 @@ class AzureFoundation( Foundation ):
   def getTscriptValues( write_mode=False ):
     result = super( AzureFoundation, AzureFoundation ).getTscriptValues( write_mode )
 
-    result[ 'azure_complex' ] = ( lambda foundation: foundation.vcenter_complex, None )
+    result[ 'azure_complex' ] = ( lambda foundation: foundation.azure_complex, None )
     result[ 'azure_resource_name' ] = ( lambda foundation: foundation.azure_resource_name, None )
     result[ 'azure_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
@@ -158,8 +156,8 @@ class AzureFoundation( Foundation ):
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_azure_resource_name': self.azure_resource_name } )
-    result.update( { '_azure_complex': self.azure_complex } )
-    result.update( { '_azure_resource_group': self.azure_complex.resource_group } )
+    result.update( { '_azure_complex': self.azure_complex.name } )
+    result.update( { '_azure_resource_group': self.azure_complex.azure_resource_group } )
     result.update( { '_azure_location': self.azure_complex.azure_location } )
 
     return result
@@ -174,7 +172,7 @@ class AzureFoundation( Foundation ):
 
   @property
   def class_list( self ):
-    return [ 'Azure' ]
+    return [ 'VM', 'Azure' ]
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
   @staticmethod

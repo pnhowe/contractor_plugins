@@ -5,12 +5,10 @@ sflinks = [ [ 'linux-base', 'azure-vm-base' ] ]
   description = 'Base Azure VM'
   scripts = { 'create' = 'azure-vm-create', 'destroy' = 'azure-vm-destroy' }
   foundation_types = [ 'Azure' ]
+  template = {}
+  physical_interface_names = []
 [ foundation.azure-vm-base.config_values ]
-  azure_size = 'Standard_D1_v2'
-  azure_location = 'westus'
-  azure_resource_group = 'contractor'
-  azure_admin_username = 'AZadmin'
-  azure_admin_password = 'AZadmin00'
+
 
 [ script.azure-vm-create ]
   description = 'Create Azure VM'
