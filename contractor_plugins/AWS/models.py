@@ -2,6 +2,7 @@ from django.db import models
 
 from cinp.orm_django import DjangoCInP as CInP
 
+from contractor.Site.models import Site
 from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
@@ -68,7 +69,7 @@ class AWSEC2Foundation( Foundation ):
   def class_list( self ):
     return [ 'AWSEC2' ]
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
+  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return AWSEC2Foundation.objects.filter( site=site )
