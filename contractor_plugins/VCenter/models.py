@@ -40,11 +40,7 @@ class VCenterComplex( Complex ):
     if self.vcenter_host.state != 'built':
       return 'planned'
 
-    state = super().state
-    if state == 'built' and self.vcenter_host.state == 'built':
-      return 'built'
-
-    return 'planned'
+    return super().state
 
   @property
   def type( self ):
@@ -63,7 +59,6 @@ class VCenterComplex( Complex ):
     foundation.vcenter_complex = self
     foundation.full_clean()
     foundation.save()
-    foundation.setLocated()
 
     iface = RealNetworkInterface( name='eth0', is_provisioning=True )
     iface.foundation = foundation

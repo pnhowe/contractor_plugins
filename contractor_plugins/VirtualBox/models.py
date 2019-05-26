@@ -1,3 +1,7 @@
+"""
+Plugin for VirtualBox.
+"""
+
 from django.db import models
 from django.core.exceptions import ValidationError
 
@@ -12,7 +16,7 @@ from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
 from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
-cinp = CInP( 'VirtualBox', '0.1' )
+cinp = CInP( 'VirtualBox', '0.1', __doc__ )
 
 FOUNDATION_SUBCLASS_LIST.append( 'virtualboxfoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'virtualboxcomplex' )
@@ -21,6 +25,10 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 
 @cinp.model( property_list=( 'state', 'type' ) )
 class VirtualBoxComplex( Complex ):
+  """
+  Complex for VirtualBox.  Only one member is allowed.  The ip address
+  for managing the VirtualBox instance comes from the member's primary ip.
+  """
   virtualbox_username = models.CharField( max_length=50 )
   virtualbox_password = models.CharField( max_length=50 )
 
@@ -45,7 +53,6 @@ class VirtualBoxComplex( Complex ):
     foundation.virtualbox_complex = self
     foundation.full_clean()
     foundation.save()
-    foundation.setLocated()
 
     iface = RealNetworkInterface( name='eth0', is_provisioning=True )
     iface.foundation = foundation
@@ -96,6 +103,10 @@ def _vmSpec( foundation ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
+  """
+  Foundation for use with VirtualBoxComplex.  Foundation instances are tracked
+  by the internal VirtualBox Hardware UUID.
+  """
   virtualbox_complex = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
   virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
 

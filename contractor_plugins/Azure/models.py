@@ -58,7 +58,6 @@ class AzureComplex( Complex ):
     foundation.azure_complex = self
     foundation.full_clean()
     foundation.save()
-    foundation.setLocated()
 
     iface = RealNetworkInterface( name='eth0', is_provisioning=True )
     iface.foundation = foundation
