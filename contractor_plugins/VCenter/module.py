@@ -709,7 +709,7 @@ class execute( ExternalFunction ):
 
   def toSubcontractor( self ):
     program = '/bin/sh'
-    args = '-c {0}'.format( self.command )
+    args = '-c "{0}"'.format( self.command )
     return ( 'execute', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': program, 'args': args, 'dir': self.dir, 'timeout': self.timeout } )
 
   def fromSubcontractor( self, data ):

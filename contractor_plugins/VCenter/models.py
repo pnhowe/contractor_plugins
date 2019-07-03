@@ -48,10 +48,18 @@ class VCenterComplex( Complex ):
 
   @property
   def connection_paramaters( self ):
+    if self.vcenter_password == '_VAULT_':
+      creds = self.vcenter_username
+
+    else:
+      creds = {
+                'username': self.vcenter_username,
+                'password': self.vcenter_password
+              }
+
     return {
               'host': self.vcenter_host.primary_ip,
-              'username': self.vcenter_username,
-              'password': self.vcenter_password,
+              'credentials': creds
             }
 
   def newFoundation( self, hostname ):
