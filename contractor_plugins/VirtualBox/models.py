@@ -1,8 +1,13 @@
+"""
+Plugin for VirtualBox.
+"""
+
 from django.db import models
 from django.core.exceptions import ValidationError
 
 from cinp.orm_django import DjangoCInP as CInP
 
+from contractor.Site.models import Site
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
@@ -11,7 +16,7 @@ from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
 from contractor_plugins.VirtualBox.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
-cinp = CInP( 'VirtualBox', '0.1' )
+cinp = CInP( 'VirtualBox', '0.1', __doc__ )
 
 FOUNDATION_SUBCLASS_LIST.append( 'virtualboxfoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'virtualboxcomplex' )
@@ -20,6 +25,10 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.VirtualBox.module' )
 
 @cinp.model( property_list=( 'state', 'type' ) )
 class VirtualBoxComplex( Complex ):
+  """
+  Complex for VirtualBox.  Only one member is allowed.  The ip address
+  for managing the VirtualBox instance comes from the member's primary ip.
+  """
   virtualbox_username = models.CharField( max_length=50 )
   virtualbox_password = models.CharField( max_length=50 )
 
@@ -41,7 +50,7 @@ class VirtualBoxComplex( Complex ):
 
   def newFoundation( self, hostname ):
     foundation = VirtualBoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
-    foundation.virtualbox_host = self
+    foundation.virtualbox_complex = self
     foundation.full_clean()
     foundation.save()
 
@@ -94,14 +103,18 @@ def _vmSpec( foundation ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VirtualBoxFoundation( Foundation ):
-  virtualbox_host = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
+  """
+  Foundation for use with VirtualBoxComplex.  Foundation instances are tracked
+  by the internal VirtualBox Hardware UUID.
+  """
+  virtualbox_complex = models.ForeignKey( VirtualBoxComplex, on_delete=models.PROTECT )
   virtualbox_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of virtualbox hosts
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VirtualBoxFoundation, VirtualBoxFoundation ).getTscriptValues( write_mode )
 
-    result[ 'virtualbox_host' ] = ( lambda foundation: foundation.virtualbox_host, None )
+    result[ 'virtualbox_complex' ] = ( lambda foundation: foundation.virtualbox_complex, None )
     result[ 'virtualbox_uuid' ] = ( lambda foundation: foundation.virtualbox_uuid, None )
     result[ 'virtualbox_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
@@ -126,7 +139,7 @@ class VirtualBoxFoundation( Foundation ):
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_virtualbox_uuid': self.virtualbox_uuid } )
-    result.update( { '_virtualbox_host': self.virtualbox_host.name } )
+    result.update( { '_virtualbox_complex': self.virtualbox_complex.name } )
 
     return result
 
@@ -143,27 +156,10 @@ class VirtualBoxFoundation( Foundation ):
     return [ 'VM', 'VirtualBox' ]
 
   @property
-  def can_auto_locate( self ):
-    try:
-      if not self.structure.auto_build:
-        return False
-    except AttributeError:
-      return False
-
-    if self.virtualbox_host.state != 'built':
-      return False
-
-    for interface in self.networkinterface_set.all():
-      if not interface.addressblock_name_map:
-        return False
-
-    return True
-
-  @property
   def complex( self ):
-    return self.virtualbox_host
+    return self.virtualbox_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
+  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return VirtualBoxFoundation.objects.filter( site=site )
@@ -177,8 +173,8 @@ class VirtualBoxFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.site.pk != self.virtualbox_host.site.pk:
-      errors[ 'site' ] = 'Site must match the virtualbox_host\'s site'
+    if self.site.pk != self.virtualbox_complex.site.pk:
+      errors[ 'site' ] = 'Site must match the virtualbox_complex\'s site'
 
     if errors:
       raise ValidationError( errors )

@@ -1,0 +1,32 @@
+
+sflinks = [ [ 'linux-base', 'azure-vm-base' ] ]
+
+[ foundation.azure-vm-base ]
+  description = 'Base Azure VM'
+  scripts = { 'create' = 'azure-vm-create', 'destroy' = 'azure-vm-destroy' }
+  foundation_types = [ 'Azure' ]
+  template = {}
+  physical_interface_names = []
+[ foundation.azure-vm-base.config_values ]
+
+
+[ script.azure-vm-create ]
+  description = 'Create Azure VM'
+  script = """# Create Azure VM
+vm_spec = foundation.azure_vmspec
+
+begin( description='VM Creation' )
+  resource_name = azure.create( vm_spec=vm_spec )
+  foundation.azure_resource_name = resource_name
+end
+"""
+
+[ script.azure-vm-destroy ]
+  description = 'Destroy Azure VM'
+  script = """# Destory Azure VM
+begin( description='VM Destruction' )
+  foundation.power_off()
+  foundation.destroy()
+  foundation.azure_resource_name = None
+end
+"""

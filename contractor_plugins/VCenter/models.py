@@ -4,13 +4,14 @@ from django.core.exceptions import ValidationError
 
 from cinp.orm_django import DjangoCInP as CInP
 
+from contractor.Site.models import Site
 from contractor.Building.models import Foundation, Complex, Structure, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
 
-from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
+from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs, execute
 
 cinp = CInP( 'VCenter', '0.1' )
 
@@ -28,7 +29,7 @@ class VCenterComplex( Complex ):
   vcenter_username = models.CharField( max_length=50 )
   vcenter_password = models.CharField( max_length=50 )
   vcenter_datacenter = models.CharField( max_length=50, help_text='set to "ha-datacenter" for ESX hosts' )
-  vcenter_cluster = models.CharField( max_length=50, help_text='set to the hostname for ESX hosts' )
+  vcenter_cluster = models.CharField( max_length=50, help_text='set to the hostname (ie: "localhost.") for ESX hosts' )
 
   @property
   def subclass( self ):
@@ -39,11 +40,7 @@ class VCenterComplex( Complex ):
     if self.vcenter_host.state != 'built':
       return 'planned'
 
-    state = super().state
-    if state == 'built' and self.vcenter_host.state == 'built':
-      return 'built'
-
-    return 'planned'
+    return super().state
 
   @property
   def type( self ):
@@ -51,15 +48,23 @@ class VCenterComplex( Complex ):
 
   @property
   def connection_paramaters( self ):
+    if self.vcenter_password == '_VAULT_':
+      creds = self.vcenter_username
+
+    else:
+      creds = {
+                'username': self.vcenter_username,
+                'password': self.vcenter_password
+              }
+
     return {
               'host': self.vcenter_host.primary_ip,
-              'username': self.vcenter_username,
-              'password': self.vcenter_password,
+              'credentials': creds
             }
 
   def newFoundation( self, hostname ):
     foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
-    foundation.vcenter_host = self
+    foundation.vcenter_complex = self
     foundation.full_clean()
     foundation.save()
 
@@ -102,7 +107,7 @@ def _vmSpec( foundation ):
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
   result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
 
-  try:
+  if 'ova' in structure_config:
     result[ 'ova' ] = structure_config[ 'ova' ]
 
     for key in ( 'vcenter_property_map', 'vcenter_deployment_option', 'vcenter_ip_protocol' ):
@@ -111,10 +116,19 @@ def _vmSpec( foundation ):
       except KeyError:
         pass
 
-  except KeyError:  # non OVA deploy
+  if 'template' in structure_config:
+    result[ 'template' ] = structure_config[ 'template' ]
+
+    for key in ( 'vcenter_hostname', 'vcenter_domain', 'vcenter_dnsserver_list', 'vcenter_dnssuffix_list', 'vcenter_property_map' ):
+      try:
+        result[ key ] = structure_config[ key ]
+      except KeyError:
+        pass
+
+  else:
     result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
 
-    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class' ):
+    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class', 'vcenter_property_map' ):
       try:
         result[ key ] = structure_config[ key ]
       except KeyError:
@@ -125,14 +139,14 @@ def _vmSpec( foundation ):
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class VCenterFoundation( Foundation ):
-  vcenter_host = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
+  vcenter_complex = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
   vcenter_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of vcenter clusters
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( VCenterFoundation, VCenterFoundation ).getTscriptValues( write_mode )
 
-    result[ 'vcenter_host' ] = ( lambda foundation: foundation.vcenter_host, None )
+    result[ 'vcenter_complex' ] = ( lambda foundation: foundation.vcenter_complex, None )
     result[ 'vcenter_uuid' ] = ( lambda foundation: foundation.vcenter_uuid, None )
     result[ 'vcenter_vmspec'] = ( lambda foundation: _vmSpec( foundation ), None )
 
@@ -151,15 +165,16 @@ class VCenterFoundation( Foundation ):
     result[ 'destroy' ] = lambda foundation: ( 'vcenter', destroy( foundation ) )
     result[ 'get_interface_map' ] = lambda foundation: ( 'vcenter', get_interface_map( foundation ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
+    result[ 'execute' ] = lambda foundation: ( 'vcenter', execute( foundation ) )
 
     return result
 
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_vcenter_uuid': self.vcenter_uuid } )
-    result.update( { '_vcenter_host': self.vcenter_host.name } )
-    result.update( { '_vcenter_datacenter': self.vcenter_host.vcenter_datacenter } )
-    result.update( { '_vcenter_cluster': self.vcenter_host.vcenter_cluster } )
+    result.update( { '_vcenter_complex': self.vcenter_complex.name } )
+    result.update( { '_vcenter_datacenter': self.vcenter_complex.vcenter_datacenter } )
+    result.update( { '_vcenter_cluster': self.vcenter_complex.vcenter_cluster } )
 
     return result
 
@@ -176,27 +191,10 @@ class VCenterFoundation( Foundation ):
     return [ 'VM', 'VCenter' ]
 
   @property
-  def can_auto_locate( self ):
-    try:
-      if not self.structure.auto_build:
-        return False
-    except AttributeError:
-      return False
-
-    if self.vcenter_host.state != 'built':
-      return False
-
-    for interface in self.networkinterface_set.all():
-      if not interface.addressblock_name_map:
-        return False
-
-    return True
-
-  @property
   def complex( self ):
-    return self.vcenter_host
+    return self.vcenter_complex
 
-  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': 'contractor.Site.models.Site' } ] )
+  @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
   def filter_site( site ):
     return VCenterFoundation.objects.filter( site=site )

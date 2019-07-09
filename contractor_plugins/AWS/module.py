@@ -89,7 +89,7 @@ class create( ExternalFunction ):
     self.instance_paramaters = state[5]
 
 
-# other functions used by the virtualbox foundation
+# other functions used by the aws foundation
 class destroy( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )

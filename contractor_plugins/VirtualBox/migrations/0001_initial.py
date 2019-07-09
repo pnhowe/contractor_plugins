@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('foundation_ptr', models.OneToOneField(serialize=False, auto_created=True, to='Building.Foundation', primary_key=True, parent_link=True)),
                 ('virtualbox_uuid', models.CharField(blank=True, null=True, max_length=36)),
-                ('virtualbox_host', models.ForeignKey(to='VirtualBox.VirtualBoxComplex', on_delete=django.db.models.deletion.PROTECT)),
+                ('virtualbox_complex', models.ForeignKey(to='VirtualBox.VirtualBoxComplex', on_delete=django.db.models.deletion.PROTECT)),
             ],
             bases=('Building.foundation',),
         ),

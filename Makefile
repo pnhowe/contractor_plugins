@@ -10,7 +10,7 @@ version:
 	echo $(VERSION)
 
 clean:
-	./setup.py clean
+	./setup.py clean || true
 	$(RM) -fr build
 	$(RM) -f dpkg
 	$(RM) -fr htmlcov
@@ -26,7 +26,10 @@ test-distros:
 	echo ubuntu-xenial
 
 test-requires:
-	python3-pytest python3-pytest-cov python3-pytest-django python3-pytest-mock
+	echo flake8 python3-pytest python3-pytest-cov python3-pytest-django python3-pytest-mock
+
+lint:
+	flake8 --ignore=E501,E201,E202,E111,E126,E114,E402,W605 --statistics --exclude=migrations .
 
 test:
 	py.test-3 -x --cov=contractor_plugins --cov-report html --cov-report term -vv contractor_plugins
@@ -44,8 +47,9 @@ respkg:
 	cd resources && respkg -b ../contractor-plugins-amt_$(VERSION).respkg        -n contractor-plugins-amt        -e $(VERSION) -c "Contractor Plugins - AMT"        -t load_amt.sh        -d amt        -s contractor-os-base
 	cd resources && respkg -b ../contractor-plugins-docker_$(VERSION).respkg     -n contractor-plugins-docker     -e $(VERSION) -c "Contractor Plugins - Docker"     -t load_docker.sh     -d docker     -s contractor-os-base
 	cd resources && respkg -b ../contractor-plugins-manual_$(VERSION).respkg     -n contractor-plugins-manual     -e $(VERSION) -c "Contractor Plugins - Manual"     -t load_manual.sh     -d manual     -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - Vcenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
+	cd resources && respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - VCenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
 	cd resources && respkg -b ../contractor-plugins-virtualbox_$(VERSION).respkg -n contractor-plugins-virtualbox -e $(VERSION) -c "Contractor Plugins - VirtualBox" -t load_virtualbox.sh -d virtualbox -s contractor-os-base
+	cd resources && respkg -b ../contractor-plugins-azure_$(VERSION).respkg      -n contractor-plugins-azure      -e $(VERSION) -c "Contractor Plugins - Azure"      -t load_azure.sh      -d azure      -s contractor-os-base
 	cd resources && respkg -b ../contractor-plugins-iputils_$(VERSION).respkg    -n contractor-plugins-ipuils     -e $(VERSION) -c "Contractor Plugins - IpUtils"    -t load_iputils.sh    -d iputils
 	touch respkg
 
