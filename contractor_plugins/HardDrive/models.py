@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Harddrive( models.Model ):
   serial = models.CharField( max_length=30, primary_key=True )
   model = models.CharField( max_length=30 )
