@@ -58,7 +58,7 @@ class VCenterComplex( Complex ):
               }
 
     return {
-              'host': self.vcenter_host.primary_ip,
+              'host': self.vcenter_host.primary_address.ip_address,
               'credentials': creds
             }
 

@@ -30,7 +30,7 @@ class DockerComplex( Complex ):
 
   @property
   def host_ip( self ):
-    return self.members.get().primary_ip
+    return self.members.get().primary_address.ip_address
 
   def newFoundation( self, hostname ):
     foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )

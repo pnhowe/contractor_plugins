@@ -43,7 +43,7 @@ class VirtualBoxComplex( Complex ):
   @property
   def connection_paramaters( self ):
     return {
-              'host': self.members.get().primary_ip,
+              'host': self.members.get().primary_address.ip_address,
               'username': self.virtualbox_username,
               'password': self.virtualbox_password,
             }
