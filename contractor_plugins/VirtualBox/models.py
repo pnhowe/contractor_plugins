@@ -9,7 +9,6 @@ from cinp.orm_django import DjangoCInP as CInP
 
 from contractor.Site.models import Site
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
-from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
@@ -54,12 +53,6 @@ class VirtualBoxComplex( Complex ):
     foundation.full_clean()
     foundation.save()
 
-    iface = RealNetworkInterface( name='eth0', is_provisioning=True )
-    iface.foundation = foundation
-    iface.physical_location = 'eth0'
-    iface.full_clean()
-    iface.save()
-
     return foundation
 
   @cinp.check_auth()
@@ -89,6 +82,7 @@ def _vmSpec( foundation ):
 
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
   result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
+  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )
 
   result[ 'virtualbox_guest_type' ] = structure_config.get( 'virtualbox_guest_type', 'Other' )
 

@@ -6,7 +6,6 @@ from cinp.orm_django import DjangoCInP as CInP
 from contractor.Site.models import Site
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
-from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 
 from contractor_plugins.Docker.module import start_stop, state, destroy, map_ports, unmap_ports
@@ -37,12 +36,6 @@ class DockerComplex( Complex ):
     foundation.docker_host = self
     foundation.full_clean()
     foundation.save()
-
-    iface = RealNetworkInterface( name='eth0', is_provisioning=True )
-    iface.foundation = foundation
-    iface.physical_location = 'eth0'
-    iface.full_clean()
-    iface.save()
 
     return foundation
 
