@@ -108,7 +108,7 @@ class wait_for_poweroff( ExternalFunction ):
 
 # plugin exports
 
-TSCRIPT_NAME = 'amt'
+TSCRIPT_NAME = 'ipmi'
 
 TSCRIPT_FUNCTIONS = {
                     }
