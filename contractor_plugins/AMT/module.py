@@ -47,7 +47,6 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     self.counter = state[3]
 
 
-
 class power_state( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
