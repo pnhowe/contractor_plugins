@@ -2,7 +2,7 @@ import re
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
-from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
+from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause, ExecutionError
 
 NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
@@ -672,9 +672,13 @@ class execute( ExternalFunction ):
     self.timeout = 300
     self.expected_rc = 0
     self.rc = None
+    self.error = None
 
   @property
   def ready( self ):
+    if self.error is not None:
+      raise ExecutionError( self.error )
+
     if self.rc is not None:
       return True
     else:
@@ -703,7 +707,7 @@ class execute( ExternalFunction ):
   @property
   def value( self ):
     if self.rc != self.expected_rc:
-      return Exception( 'Command returned "{0}", expected "{1}"'.format( self.rc, self.expected_rc ) )
+      return ExecutionError( 'Command returned "{0}", expected "{1}"'.format( self.rc, self.expected_rc ) )
     else:
       return True
 
@@ -713,10 +717,11 @@ class execute( ExternalFunction ):
     return ( 'execute', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': program, 'args': args, 'dir': self.dir, 'timeout': self.timeout } )
 
   def fromSubcontractor( self, data ):
-    self.rc = data[ 'rc' ]
+    self.rc = data.get( 'rc', None )
+    self.error = data.get( 'error', None )
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.command, self.dir, self.expected_rc, self.rc )
+    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.command, self.dir, self.expected_rc, self.rc, self.error )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
@@ -728,6 +733,97 @@ class execute( ExternalFunction ):
     self.dir = state[6]
     self.expected_rc = state[7]
     self.rc = state[8]
+    self.error = state[9]
+
+
+class mark_as_template( ExternalFunction ):
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.uuid = foundation.vcenter_uuid
+    self.name = foundation.locator
+    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.as_template = None
+    self.done = None
+
+  @property
+  def ready( self ):
+    if self.done is True:
+      return True
+    else:
+      return 'Waiting VM to get Marked'
+
+  def setup( self, parms ):
+    try:
+      self.as_template = bool( parms.get( 'as_template', True ) )
+    except ValueError:
+      raise ParamaterError( 'as_template', 'must be boolean' )
+    except KeyError:
+      pass
+
+  def toSubcontractor( self ):
+    return ( 'mark_as_template', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'as_template': self.as_template } )
+
+  def fromSubcontractor( self, data ):
+    self.done = True
+
+  def __getstate__( self ):
+    return ( self.connection_paramaters, self.uuid, self.name, self.as_template, self.done )
+
+  def __setstate__( self, state ):
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.as_template = state[3]
+    self.done = state[4]
+
+
+class export( ExternalFunction ):
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.uuid = foundation.vcenter_uuid
+    self.name = foundation.locator
+    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.repo_paramaters = {}
+    self.handle = None
+
+  @property
+  def ready( self ):
+    if self.handle is not None:
+      return True
+    else:
+      return 'Waiting VM to be Exported'
+
+  def setup( self, parms ):
+    try:
+      self.repo_paramaters[ 'uri' ] = parms.get( 'repo_uri' )
+    except KeyError:
+      raise ParamaterError( 'repo_uri', 'required' )
+
+    for name in ( 'repo_username', 'repo_password' ):
+      try:
+        self.repo_paramaters[ name[ 5: ] ] = parms[ name ]
+      except KeyError:
+        pass
+
+  @property
+  def value( self ):
+    return self.handle
+
+  def toSubcontractor( self ):
+    return ( 'export', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'repo_paramaters': self.repo_paramaters } )
+
+  def fromSubcontractor( self, data ):
+    self.done = True
+
+  def __getstate__( self ):
+    return ( self.connection_paramaters, self.uuid, self.name, self.repo_paramaters, self.handle )
+
+  def __setstate__( self, state ):
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.repo_paramaters = state[3]
+    self.handle = state[4]
 
 
 # plugin exports

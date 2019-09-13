@@ -10,7 +10,7 @@ from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
 
-from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs, execute
+from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs, execute, mark_as_template, export
 
 cinp = CInP( 'VCenter', '0.1' )
 
@@ -160,6 +160,8 @@ class VCenterFoundation( Foundation ):
     result[ 'get_interface_map' ] = lambda foundation: ( 'vcenter', get_interface_map( foundation ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
     result[ 'execute' ] = lambda foundation: ( 'vcenter', execute( foundation ) )
+    result[ 'mark_as_template' ] = lambda foundation: ( 'vcenter', mark_as_template( foundation ) )
+    result[ 'export' ] = lambda foundation: ( 'vcenter', export( foundation ) )
 
     return result
 
