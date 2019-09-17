@@ -11,6 +11,10 @@ sflinks = [ [ 'linux-base', 'ipmi-base' ] ]
 [ script.ipmi-create ]
   description = 'Create IPMI Server'
   script = """# Test and Configure IPMI Server
+while not foundation.link_test()
+begin()
+  pause( msg="IPMI Link test failed, resume to try again." )
+end
 foundation.wait_for_poweroff()
 """
 
