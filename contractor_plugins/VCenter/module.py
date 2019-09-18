@@ -783,7 +783,7 @@ class export( ExternalFunction ):
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
     self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
-    self.repo_paramaters = {}
+    self.url = None
     self.handle = None
 
   @property
@@ -795,34 +795,28 @@ class export( ExternalFunction ):
 
   def setup( self, parms ):
     try:
-      self.repo_paramaters[ 'uri' ] = parms.get( 'repo_uri' )
+      self.url[ 'url' ] = parms.get( 'url' )
     except KeyError:
-      raise ParamaterError( 'repo_uri', 'required' )
-
-    for name in ( 'repo_username', 'repo_password' ):
-      try:
-        self.repo_paramaters[ name[ 5: ] ] = parms[ name ]
-      except KeyError:
-        pass
+      raise ParamaterError( 'url', 'required' )
 
   @property
   def value( self ):
     return self.handle
 
   def toSubcontractor( self ):
-    return ( 'export', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'repo_paramaters': self.repo_paramaters } )
+    return ( 'export', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'url': self.url } )
 
   def fromSubcontractor( self, data ):
     self.done = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.repo_paramaters, self.handle )
+    return ( self.connection_paramaters, self.uuid, self.name, self.url, self.handle )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.uuid = state[1]
     self.name = state[2]
-    self.repo_paramaters = state[3]
+    self.url = state[3]
     self.handle = state[4]
 
 
