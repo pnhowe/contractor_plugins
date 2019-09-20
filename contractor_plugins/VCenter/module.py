@@ -94,7 +94,7 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'boot_order' ] = [ 'hdd' ]
 
       try:
-        self.vm_paramaters[ 'disk_provisioning' ] = self.vm_spec[ 'disk_provisioning' ]
+        self.vm_paramaters[ 'disk_provisioning' ] = vm_spec[ 'disk_provisioning' ]
       except KeyError:
         pass
 
@@ -795,7 +795,7 @@ class export( ExternalFunction ):
 
   def setup( self, parms ):
     try:
-      self.url[ 'url' ] = parms.get( 'url' )
+      self.url = parms.get( 'url' )
     except KeyError:
       raise ParamaterError( 'url', 'required' )
 
