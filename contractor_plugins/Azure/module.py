@@ -67,10 +67,6 @@ class create( ExternalFunction ):
 
     interface_list = []
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-      name_map = interface.addressblock_name_map
-      if not name_map:
-        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
       nic_name = '{0}-{1}'.format( vm_name, interface.name )
       config_list = []
       counter = 0
@@ -83,7 +79,7 @@ class create( ExternalFunction ):
 
       interface_list.append( {
                                 'name': '{0}-nic'.format( nic_name ),
-                                'network': name_map[ None ],
+                                'network': interface.network.name,
                                 'config_list': config_list
                               } )
 

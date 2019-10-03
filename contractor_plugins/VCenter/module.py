@@ -106,11 +106,7 @@ class create( ExternalFunction ):
 
       interface_list = []
       for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-        name_map = interface.addressblock_name_map
-        if not name_map:
-          raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
-        interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] } )
+        interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name } )
 
       self.vm_paramaters[ 'interface_list' ] = interface_list
       return
@@ -129,13 +125,9 @@ class create( ExternalFunction ):
 
       interface_list = []
       for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-        name_map = interface.addressblock_name_map
-        if not name_map:
-          raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
         address = interface.config[ 'address_list' ][0]
 
-        item = { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] }
+        item = { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name }
         item[ 'address' ] = address[ 'address' ]
         item[ 'netmask' ] = address[ 'netmask' ]
         if address[ 'gateway' ] is not None:
@@ -153,11 +145,7 @@ class create( ExternalFunction ):
 
     interface_list = []
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-      name_map = interface.addressblock_name_map
-      if not name_map:
-        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
-      interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ], 'type': interface_type } )
+      interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name, 'type': interface_type } )
 
     self.vm_paramaters[ 'disk_list' ] = [ { 'size': vm_spec.get( 'disk_size', 10 ), 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
     self.vm_paramaters[ 'interface_list' ] = interface_list

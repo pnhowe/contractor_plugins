@@ -62,11 +62,7 @@ class create( ExternalFunction ):
     interface_list = []
     counter = 0
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' )[ :4 ]:  # max 4 interfaces
-      name_map = interface.addressblock_name_map
-      if not name_map:
-        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
-      interface_list.append( { 'name': interface.name, 'index': counter, 'network': name_map[ None ], 'type': 'host', 'adapter_type': adapter_type } )  # type one of 'host', 'bridge', 'nat', 'internal'
+      interface_list.append( { 'name': interface.name, 'index': counter, 'network': interface.network.name, 'type': 'host', 'adapter_type': adapter_type } )  # type one of 'host', 'bridge', 'nat', 'internal'
       counter += 1
 
     self.vm_paramaters = {  # the defaults
