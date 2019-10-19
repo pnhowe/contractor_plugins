@@ -8,7 +8,7 @@ from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 # from contractor.Utilities.models import RealNetworkInterface, Networked
 
-from contractor_plugins.IPMI.module import set_power, power_state, wait_for_poweroff
+from contractor_plugins.IPMI.module import link_test, set_power, power_state, wait_for_poweroff
 
 cinp = CInP( 'IPMI', '0.1' )
 
@@ -35,6 +35,7 @@ class IPMIFoundation( Foundation ):  # , Networked ):
   @staticmethod
   def getTscriptFunctions():
     result = super( IPMIFoundation, IPMIFoundation ).getTscriptFunctions()
+    result[ 'link_test' ] = lambda foundation: ( 'ipmi', link_test( foundation ) )
     result[ 'power_on' ] = lambda foundation: ( 'ipmi', set_power( foundation, 'on' ) )
     result[ 'power_off' ] = lambda foundation: ( 'ipmi', set_power( foundation, 'off' ) )
     result[ 'power_state' ] = lambda foundation: ( 'ipmi', power_state( foundation ) )
@@ -44,6 +45,7 @@ class IPMIFoundation( Foundation ):  # , Networked ):
 
   def configAttributes( self ):
     result = super().configAttributes()
+    result[ 'ipmi_ip_address' ] = self.ipmi_ip_address
 
     return result
 
@@ -73,7 +75,7 @@ class IPMIFoundation( Foundation ):  # , Networked ):
 
   @property
   def class_list( self ):
-    return [ 'Physical', 'IPOMI' ]
+    return [ 'Physical', 'IPMI' ]
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod

@@ -5,7 +5,7 @@ MAX_POWER_SET_ATTEMPTS = 5
 
 
 class link_test( ExternalFunction ):
-  def __init__( self, foundation, state, *args, **kwargs ):
+  def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.connection_paramaters = foundation.connection_paramaters
     self.count = 20
@@ -14,11 +14,16 @@ class link_test( ExternalFunction ):
     self.delay = 1
     self.score = None
 
-  def ready( self ):
-    if self.state is not None:
-      return True
-    else:
+  @property
+  def done( self ):
+    return self.score is not None
+
+  @property
+  def message( self ):
+    if self.score is None:
       return 'Running Link Test'
+
+    return 'Link Test Score: "{0}"'.format( self.score )
 
   @property
   def value( self ):
@@ -56,11 +61,12 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
       raise Pause( 'To Many Attempts to set power to "{0}", curently "{1}"'.format( self.desired_state, self.curent_state ) )
 
   @property
-  def ready( self ):
-    if self.desired_state == self.curent_state:
-      return True
-    else:
-      return 'Power curently "{0}" waiting for "{1}", attempt {2} of {3}'.format( self.curent_state, self.desired_state, self.counter, MAX_POWER_SET_ATTEMPTS )
+  def done( self ):
+    return self.desired_state == self.curent_state
+
+  @property
+  def message( self ):
+    return 'Power curently "{0}" waiting for "{1}", attempt {2} of {3}'.format( self.curent_state, self.desired_state, self.counter, MAX_POWER_SET_ATTEMPTS )
 
   def rollback( self ):
     self.counter = 0
@@ -94,11 +100,15 @@ class power_state( ExternalFunction ):
     self.state = None
 
   @property
-  def ready( self ):
-    if self.state is not None:
-      return True
-    else:
+  def done( self ):
+    return self.state is not None
+
+  @property
+  def message( self ):
+    if self.state is None:
       return 'Retrieving for Power State'
+
+    return 'Power State at "{0}"'.format( self.state )
 
   @property
   def value( self ):
@@ -126,11 +136,12 @@ class wait_for_poweroff( ExternalFunction ):
     self.curent_state = None
 
   @property
-  def ready( self ):
-    if self.curent_state == 'off':
-      return True
-    else:
-      return 'Waiting for Power off, curently "{0}"'.format( self.curent_state )
+  def done( self ):
+    return self.curent_state == 'off'
+
+  @property
+  def message( self ):
+    return 'Waiting for Power off, curently "{0}"'.format( self.curent_state )
 
   def toSubcontractor( self ):
     return ( 'power_state', { 'connection': self.connection_paramaters } )
