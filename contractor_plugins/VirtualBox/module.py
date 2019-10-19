@@ -20,9 +20,17 @@ class create( ExternalFunction ):
     self.vm_paramaters = {}
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.uuid is not None
+
+  @property
+  def message( self ):
     if self.uuid is not None:
-      return True
+      if self.in_rollback:
+        return 'VM Rolled Back'
+      else:
+        return 'VM Created'
+
     else:
       if self.in_rollback:
         return 'Waiting for VM Rollback'
@@ -137,12 +145,16 @@ class destroy( ExternalFunction ):
     self.uuid = foundation.virtualbox_uuid
     self.name = foundation.locator
     self.connection_paramaters = foundation.virtualbox_complex.connection_paramaters
-    self.done = None
+    self.complete = None
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.complete is True
+
+  @property
+  def message( self ):
+    if self.complete is True:
+      return 'VM Destroyed'
     else:
       return 'Waiting for VM Destruction'
 
@@ -150,14 +162,14 @@ class destroy( ExternalFunction ):
     return ( 'destroy', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
-    self.done = True
+    self.complete = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.done, self.name, self.uuid )
+    return ( self.connection_paramaters, self.complete, self.name, self.uuid )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
-    self.done = state[1]
+    self.complete = state[1]
     self.name = state[2]
     self.uuid = state[3]
 
@@ -177,11 +189,12 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
       raise Pause( 'To Many Attempts to set power to "{0}", curently "{1}"'.format( self.desired_state, self.curent_state ) )
 
   @property
-  def ready( self ):
-    if self.desired_state == self.curent_state:
-      return True
-    else:
-      return 'Power curently "{0}" waiting for "{1}", attempt {2} of {3}'.format( self.curent_state, self.desired_state, self.counter, MAX_POWER_SET_ATTEMPTS )
+  def done( self ):
+    return self.desired_state == self.curent_state
+
+  @property
+  def message( self ):
+    return 'Power curently "{0}" waiting for "{1}", attempt {2} of {3}'.format( self.curent_state, self.desired_state, self.counter, MAX_POWER_SET_ATTEMPTS )
 
   def rollback( self ):
     self.counter = 0
@@ -218,11 +231,15 @@ class power_state( ExternalFunction ):
     self.state = None
 
   @property
-  def ready( self ):
-    if self.state is not None:
-      return True
-    else:
-      return 'Retrieving for Power State'
+  def done( self ):
+    return self.state is not None
+
+  @property
+  def message( self ):
+    if self.state is None:
+        return 'Retrieving for Power State'
+
+    return 'Power State at "{0}"'.format( self.state )
 
   @property
   def value( self ):
@@ -253,11 +270,12 @@ class wait_for_poweroff( ExternalFunction ):
     self.current_state = None
 
   @property
-  def ready( self ):
-    if self.current_state == 'off':
-      return True
-    else:
-      return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
+  def done( self ):
+    return self.current_state == 'off'
+
+  @property
+  def message( self ):
+    return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
 
   def toSubcontractor( self ):
     return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
@@ -284,9 +302,13 @@ class get_interface_map( ExternalFunction ):
     self.interface_list = None
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.interface_list is not None
+
+  @property
+  def message( self ):
     if self.interface_list is not None:
-      return True
+      return 'Length of Interface Map: "{0}"'.format( len( self.interface_list ) )
     else:
       return 'Waiting for Interface Map'
 

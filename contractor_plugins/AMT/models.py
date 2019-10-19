@@ -18,6 +18,7 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.AMT.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class AMTFoundation( Foundation ):  # , Networked ):
+  amt_username = models.CharField( max_length=16, default='admin' )
   amt_password = models.CharField( max_length=16 )
   # amt_interface = models.ForeignKey( RealNetworkInterface )
   amt_ip_address = models.CharField( max_length=30 )
@@ -57,13 +58,13 @@ class AMTFoundation( Foundation ):  # , Networked ):
   @property
   def connection_paramaters( self ):
     if self.amt_password == '_VAULT_':
-      creds = self.amt_password
+      creds = self.amt_username
 
     else:
       creds = {
-                'password': self.amt_password
+                'password': self.amt_password,
+                'username': self.amt_username,
               }
-
     return {
               'ip_address': self.amt_ip_address,
               'credentials': creds
