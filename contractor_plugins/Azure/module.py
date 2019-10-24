@@ -17,9 +17,16 @@ class create( ExternalFunction ):
     self.vm_paramaters = {}
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.resource_name is not None
+
+  @property
+  def message( self ):
     if self.resource_name is not None:
-      return True
+      if self.in_rollback:
+        return 'Resource Rolled Back'
+      else:
+        return 'Resource Created'
 
     else:
       if self.in_rollback:
@@ -67,10 +74,6 @@ class create( ExternalFunction ):
 
     interface_list = []
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-      name_map = interface.addressblock_name_map
-      if not name_map:
-        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
       nic_name = '{0}-{1}'.format( vm_name, interface.name )
       config_list = []
       counter = 0
@@ -83,7 +86,7 @@ class create( ExternalFunction ):
 
       interface_list.append( {
                                 'name': '{0}-nic'.format( nic_name ),
-                                'network': name_map[ None ],
+                                'network': interface.network.name,
                                 'config_list': config_list
                               } )
 
@@ -134,12 +137,16 @@ class destroy( ExternalFunction ):
     self.resource_name = foundation.azure_resource_name
     self.resource_group = foundation.azure_complex.azure_resource_group
     self.connection_paramaters = foundation.azure_complex.connection_paramaters
-    self.done = None
+    self.completed = None
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.completed is True
+
+  @property
+  def message( self ):
+    if self.completed is True:
+      return 'Resource Destroyed'
     else:
       return 'Waiting for Resource Destruction'
 
@@ -147,16 +154,16 @@ class destroy( ExternalFunction ):
     return ( 'destroy', { 'connection': self.connection_paramaters, 'resource_name': self.resource_name, 'resource_group': self.resource_group } )
 
   def fromSubcontractor( self, data ):
-    self.done = True
+    self.completed = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.resource_name, self.resource_group, self.done )
+    return ( self.connection_paramaters, self.resource_name, self.resource_group, self.completed )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.resource_name = state[1]
     self.resource_group = state[2]
-    self.done = state[3]
+    self.completed = state[3]
 
 
 class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
@@ -173,11 +180,12 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     pass
 
   @property
-  def ready( self ):
-    if self.desired_state == self.curent_state:
-      return True
-    else:
-      return 'Power curently "{0}" waiting for "{1}"'.format( self.curent_state, self.desired_state )
+  def done( self ):
+    return self.desired_state == self.curent_state
+
+  @property
+  def message( self ):
+    return 'Power curently "{0}" waiting for "{1}"'.format( self.curent_state, self.desired_state )
 
   def rollback( self ):
     self.curent_state = None
@@ -210,11 +218,15 @@ class power_state( ExternalFunction ):
     self.state = None
 
   @property
-  def ready( self ):
-    if self.state is not None:
-      return True
-    else:
-      return 'Retrieving for Power State'
+  def done( self ):
+    return self.state is not None
+
+  @property
+  def message( self ):
+    if self.state is None:
+        return 'Retrieving for Power State'
+
+    return 'Power State at "{0}"'.format( self.state )
 
   @property
   def value( self ):

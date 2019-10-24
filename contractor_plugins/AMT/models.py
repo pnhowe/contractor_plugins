@@ -18,7 +18,8 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.AMT.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class AMTFoundation( Foundation ):  # , Networked ):
-  amt_password = models.CharField( max_length=16 )  # not going to do unique, there could be lots of virtualbox hosts
+  amt_username = models.CharField( max_length=16, default='admin' )
+  amt_password = models.CharField( max_length=16 )
   # amt_interface = models.ForeignKey( RealNetworkInterface )
   amt_ip_address = models.CharField( max_length=30 )
 
@@ -26,7 +27,6 @@ class AMTFoundation( Foundation ):  # , Networked ):
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
     result = super( AMTFoundation, AMTFoundation ).getTscriptValues( write_mode )
 
-    result[ 'amt_password' ] = ( lambda foundation: foundation.amt_password, None )
     # result[ 'amt_ip_address' ] = ( lambda foundation: foundation.amt_interface.ip_address, None )
     result[ 'amt_ip_address' ] = ( lambda foundation: foundation.amt_ip_address, None )
 
@@ -54,6 +54,21 @@ class AMTFoundation( Foundation ):  # , Networked ):
   @property
   def type( self ):
     return 'AMT'
+
+  @property
+  def connection_paramaters( self ):
+    if self.amt_password == '_VAULT_':
+      creds = self.amt_username
+
+    else:
+      creds = {
+                'password': self.amt_password,
+                'username': self.amt_username,
+              }
+    return {
+              'ip_address': self.amt_ip_address,
+              'credentials': creds
+            }
 
   @property
   def class_list( self ):

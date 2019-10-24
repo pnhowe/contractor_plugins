@@ -7,11 +7,10 @@ from cinp.orm_django import DjangoCInP as CInP
 from contractor.Site.models import Site
 from contractor.Building.models import Foundation, Complex, Structure, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
-from contractor.Utilities.models import RealNetworkInterface
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
 
-from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs, execute
+from contractor_plugins.VCenter.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs, execute, mark_as_template, export
 
 cinp = CInP( 'VCenter', '0.1' )
 
@@ -58,7 +57,7 @@ class VCenterComplex( Complex ):
               }
 
     return {
-              'host': self.vcenter_host.primary_ip,
+              'host': self.vcenter_host.primary_address.ip_address,
               'credentials': creds
             }
 
@@ -67,12 +66,6 @@ class VCenterComplex( Complex ):
     foundation.vcenter_complex = self
     foundation.full_clean()
     foundation.save()
-
-    iface = RealNetworkInterface( name='eth0', is_provisioning=True )
-    iface.foundation = foundation
-    iface.physical_location = 'eth0'
-    iface.full_clean()
-    iface.save()
 
     return foundation
 
@@ -106,6 +99,7 @@ def _vmSpec( foundation ):
 
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
   result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
+  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )
 
   if 'ova' in structure_config:
     result[ 'ova' ] = structure_config[ 'ova' ]
@@ -128,7 +122,7 @@ def _vmSpec( foundation ):
   else:
     result[ 'vcenter_guest_id' ] = structure_config.get( 'vcenter_guest_id', 'otherGuest' )
 
-    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_network_interface_class', 'vcenter_property_map' ):
+    for key in ( 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage', 'vcenter_virtual_vhv', 'vcenter_network_interface_class', 'vcenter_property_map' ):
       try:
         result[ key ] = structure_config[ key ]
       except KeyError:
@@ -166,6 +160,8 @@ class VCenterFoundation( Foundation ):
     result[ 'get_interface_map' ] = lambda foundation: ( 'vcenter', get_interface_map( foundation ) )
     result[ 'set_interface_macs' ] = lambda foundation: set_interface_macs( foundation )
     result[ 'execute' ] = lambda foundation: ( 'vcenter', execute( foundation ) )
+    result[ 'mark_as_template' ] = lambda foundation: ( 'vcenter', mark_as_template( foundation ) )
+    result[ 'export' ] = lambda foundation: ( 'vcenter', export( foundation ) )
 
     return result
 

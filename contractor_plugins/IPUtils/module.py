@@ -9,11 +9,15 @@ class ping( ExternalFunction ):
     self.result = None
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.result is not None
+
+  @property
+  def message( self ):
     if self.result is not None:
-      return True
-    else:
       return 'Waiting for Ping Results'
+    else:
+      return 'Ping result "{0}"'.format( self.result )
 
   @property
   def value( self ):
@@ -54,11 +58,12 @@ class waitForPort( ExternalFunction ):
     self.curent_state = None
 
   @property
-  def ready( self ):
-    if self.curent_state == 'open':
-      return True
-    else:
-      return 'Port State Curently "{0}"'.format( self.curent_state )
+  def done( self ):
+    return self.curent_state == 'open'
+
+  @property
+  def message( self ):
+    return 'Port State Curently "{0}"'.format( self.curent_state )
 
   def setup( self, parms ):
     try:

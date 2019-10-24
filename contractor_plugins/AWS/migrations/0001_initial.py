@@ -50,7 +50,7 @@ end
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Building', '0001_initial'),
+        ('Building', '0002_initial2'),
     ]
 
     operations = [

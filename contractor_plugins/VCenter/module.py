@@ -2,7 +2,7 @@ import re
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
-from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
+from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause, ExecutionError
 
 NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
@@ -20,9 +20,17 @@ class create( ExternalFunction ):
     self.vm_paramaters = {}
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.uuid is not None
+
+  @property
+  def message( self ):
     if self.uuid is not None:
-      return True
+      if self.in_rollback:
+        return 'VM Rolled back'
+      else:
+        return 'VM Created'
+
     else:
       if self.in_rollback:
         return 'Waiting for VM Rollback'
@@ -94,7 +102,7 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'boot_order' ] = [ 'hdd' ]
 
       try:
-        self.vm_paramaters[ 'disk_provisioning' ] = self.vm_paramaters[ 'disk_provisioning' ]
+        self.vm_paramaters[ 'disk_provisioning' ] = vm_spec[ 'disk_provisioning' ]
       except KeyError:
         pass
 
@@ -106,11 +114,7 @@ class create( ExternalFunction ):
 
       interface_list = []
       for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-        name_map = interface.addressblock_name_map
-        if not name_map:
-          raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
-        interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] } )
+        interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name } )
 
       self.vm_paramaters[ 'interface_list' ] = interface_list
       return
@@ -129,13 +133,9 @@ class create( ExternalFunction ):
 
       interface_list = []
       for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-        name_map = interface.addressblock_name_map
-        if not name_map:
-          raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
-
         address = interface.config[ 'address_list' ][0]
 
-        item = { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ] }
+        item = { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name }
         item[ 'address' ] = address[ 'address' ]
         item[ 'netmask' ] = address[ 'netmask' ]
         if address[ 'gateway' ] is not None:
@@ -153,13 +153,9 @@ class create( ExternalFunction ):
 
     interface_list = []
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-      name_map = interface.addressblock_name_map
-      if not name_map:
-        raise ParamaterError( '<internal>', 'addressblock name maping is empty for interface "{0}"'.format( interface.name ) )
+      interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name, 'type': interface_type } )
 
-      interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': name_map[ None ], 'type': interface_type } )
-
-    self.vm_paramaters[ 'disk_list' ] = [ { 'size': 10, 'name': 'sda', 'type': self.vm_paramaters.get( 'disk_provisioning', 'thin' ) } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
+    self.vm_paramaters[ 'disk_list' ] = [ { 'size': vm_spec.get( 'disk_size', 10 ), 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
     self.vm_paramaters[ 'interface_list' ] = interface_list
     self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
 
@@ -167,7 +163,7 @@ class create( ExternalFunction ):
       self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
       self.vm_paramaters[ 'boot_order' ] = [ 'cd', 'net', 'hdd' ]
 
-    for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage', 'vcenter_property_map' ):
+    for key in ( 'vcenter_guest_id', 'vcenter_virtual_exec_usage', 'vcenter_virtual_mmu_usage', 'vcenter_virtual_vhv', 'vcenter_property_map' ):
       try:
         self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:
@@ -204,7 +200,7 @@ class create( ExternalFunction ):
 class host_list( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.result = None
+    self.host_list = None
     self.connection_paramaters = {}
     self.datacenter = None
     self.cluster = None
@@ -213,15 +209,19 @@ class host_list( ExternalFunction ):
     self.memory_scaler = None
 
   @property
-  def ready( self ):
-    if self.result is not None:
-      return True
+  def done( self ):
+    return self.host_list is not None
+
+  @property
+  def message( self ):
+    if self.host_list is not None:
+      return 'Host List Length: "{0}"'.format( len( self.host_list ) )
     else:
       return 'Waiting for Host List'
 
   @property
   def value( self ):
-    return self.result
+    return self.host_list
 
   def setup( self, parms ):
     try:
@@ -251,10 +251,10 @@ class host_list( ExternalFunction ):
     return ( 'host_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'min_memory': self.min_memory, 'min_cpu': self.min_cpu, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler } )
 
   def fromSubcontractor( self, data ):
-    self.result = data[ 'host_list' ]
+    self.host_list = data[ 'host_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.cluster, self.min_memory, self.min_cpu, self.cpu_scaler, self.memory_scaler, self.result )
+    return ( self.connection_paramaters, self.datacenter, self.cluster, self.min_memory, self.min_cpu, self.cpu_scaler, self.memory_scaler, self.host_list )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
@@ -264,21 +264,25 @@ class host_list( ExternalFunction ):
     self.min_cpu = state[4]
     self.cpu_scaler = state[5]
     self.memory_scaler = state[6]
-    self.result = state[7]
+    self.host_list = state[7]
 
 
 class create_datastore( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.done = False
+    self.complete = False
     self.connection_paramaters = {}
     self.datacenter = None
     self.datastore_list = None
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.complete is True
+
+  @property
+  def message( self ):
+    if self.complete is True:
+      return 'Datastore Created'
     else:
       return 'Waiting for Datastore Creation'
 
@@ -310,10 +314,10 @@ class create_datastore( ExternalFunction ):
     return ( 'create_datastore', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'host': self.host, 'name': self.name, 'model': self.model } )
 
   def fromSubcontractor( self, data ):
-    self.done = data.get( 'done', False )
+    self.complete = data.get( 'done', False )
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.host, self.name, self.model, self.done )
+    return ( self.connection_paramaters, self.datacenter, self.host, self.name, self.model, self.complete )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
@@ -321,13 +325,13 @@ class create_datastore( ExternalFunction ):
     self.host = state[2]
     self.name = state[3]
     self.model = state[4]
-    self.done = state[5]
+    self.complete = state[5]
 
 
 class datastore_list( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.result = None
+    self.datastore_list = None
     self.connection_paramaters = {}
     self.datacenter = None
     self.cluster = None
@@ -336,15 +340,19 @@ class datastore_list( ExternalFunction ):
     self.name_regex = None
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.datastore_list is not None
+
+  @property
+  def message( self ):
     if self.result is not None:
-      return True
+      return 'Datastore List Length: "{0}"'.format( len( self.datastore_list ) )
     else:
       return 'Waiting for Datastore List'
 
   @property
   def value( self ):
-    return self.result
+    return self.datastore_list
 
   def setup( self, parms ):
     try:
@@ -374,10 +382,10 @@ class datastore_list( ExternalFunction ):
     return ( 'datastore_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'host': self.host, 'min_free_space': self.min_free_space, 'name_regex': self.name_regex } )
 
   def fromSubcontractor( self, data ):
-    self.result = data[ 'datastore_list' ]
+    self.datastore_list = data[ 'datastore_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.cluster, self.host, self.name_regex, self.min_free_space, self.result )
+    return ( self.connection_paramaters, self.datacenter, self.cluster, self.host, self.name_regex, self.min_free_space, self.datastore_list )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
@@ -386,13 +394,13 @@ class datastore_list( ExternalFunction ):
     self.host = state[3]
     self.name_regex = state[4]
     self.min_free_space = state[5]
-    self.result = state[6]
+    self.datastore_list = state[6]
 
 
 class network_list( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.result = None
+    self.network_list = None
     self.connection_paramaters = {}
     self.datacenter = None
     self.cluster = None
@@ -401,15 +409,19 @@ class network_list( ExternalFunction ):
     self.name_regex = None
 
   @property
-  def ready( self ):
-    if self.result is not None:
-      return True
+  def done( self ):
+    return self.network_list is not None
+
+  @property
+  def message( self ):
+    if self.network_list is not None:
+      return 'Network List Length: "(0)"'.format( len( self.network_list ) )
     else:
       return 'Waiting for Network List'
 
   @property
   def value( self ):
-    return self.result
+    return self.network_list
 
   def setup( self, parms ):
     try:
@@ -432,10 +444,10 @@ class network_list( ExternalFunction ):
     return ( 'network_list', { 'connection': self.connection_paramaters, 'datacenter': self.datacenter, 'cluster': self.cluster, 'host': self.host, 'name_regex': self.name_regex } )
 
   def fromSubcontractor( self, data ):
-    self.result = data[ 'network_list' ]
+    self.network_list = data[ 'network_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.datacenter, self.cluster, self.host, self.name_regex, self.result )
+    return ( self.connection_paramaters, self.datacenter, self.cluster, self.host, self.name_regex, self.network_list )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
@@ -443,7 +455,7 @@ class network_list( ExternalFunction ):
     self.cluster = state[2]
     self.host = state[3]
     self.name_regex = state[4]
-    self.result = state[5]
+    self.network_list = state[5]
 
 
 # other functions used by the vcenter foundation
@@ -453,12 +465,16 @@ class destroy( ExternalFunction ):
     self.uuid = foundation.vcenter_uuid
     self.name = foundation.locator
     self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
-    self.done = None
+    self.complete = None
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.complete is True
+
+  @property
+  def message( self ):
+    if self.complete is True:
+      return 'VM Destroyed'
     else:
       return 'Waiting for VM Destruction'
 
@@ -466,16 +482,16 @@ class destroy( ExternalFunction ):
     return ( 'destroy', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
-    self.done = True
+    self.complete = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.done )
+    return ( self.connection_paramaters, self.uuid, self.name, self.complete )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.uuid = state[1]
     self.name = state[2]
-    self.done = state[3]
+    self.complete = state[3]
 
 
 class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
@@ -493,11 +509,12 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
       raise Pause( 'To Many Attempts to set power to "{0}", curently "{1}"'.format( self.desired_state, self.curent_state ) )
 
   @property
-  def ready( self ):
-    if self.desired_state == self.curent_state:
-      return True
-    else:
-      return 'Power curently "{0}" waiting for "{1}", attempt {2} of {3}'.format( self.curent_state, self.desired_state, self.counter, MAX_POWER_SET_ATTEMPTS )
+  def done( self ):
+    return self.desired_state == self.curent_state
+
+  @property
+  def message( self ):
+    return 'Power curently "{0}" waiting for "{1}", attempt {2} of {3}'.format( self.curent_state, self.desired_state, self.counter, MAX_POWER_SET_ATTEMPTS )
 
   def rollback( self ):
     self.counter = 0
@@ -534,11 +551,15 @@ class power_state( ExternalFunction ):
     self.state = None
 
   @property
-  def ready( self ):
-    if self.state is not None:
-      return True
-    else:
-      return 'Waiting for Power State'
+  def done( self ):
+    return self.state is not None
+
+  @property
+  def message( self ):
+    if self.state is None:
+        return 'Retrieving for Power State'
+
+    return 'Power State at "{0}"'.format( self.state )
 
   @property
   def value( self ):
@@ -569,11 +590,12 @@ class wait_for_poweroff( ExternalFunction ):
     self.current_state = None
 
   @property
-  def ready( self ):
-    if self.current_state == 'off':
-      return True
-    else:
-      return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
+  def done( self ):
+    return self.current_state == 'off'
+
+  @property
+  def message( self ):
+    return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
 
   def toSubcontractor( self ):
     return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
@@ -601,9 +623,13 @@ class get_interface_map( ExternalFunction ):
     self.interface_list = None
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.interface_list is not None
+
+  @property
+  def message( self ):
     if self.interface_list is not None:
-      return True
+      return 'Interface Map Length: "{0}"'.format( len( self.interface_list ) )
     else:
       return 'Waiting for Interface Map'
 
@@ -672,11 +698,16 @@ class execute( ExternalFunction ):
     self.timeout = 300
     self.expected_rc = 0
     self.rc = None
+    self.error = None
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.rc is not None or self.error is not None
+
+  @property
+  def message( self ):
     if self.rc is not None:
-      return True
+      return 'Eexecution returned "{0}"'.format( self.rc )
     else:
       return 'Waiting for Execution'
 
@@ -702,8 +733,11 @@ class execute( ExternalFunction ):
 
   @property
   def value( self ):
+    if self.error is not None:
+      return ExecutionError( 'Execution error: "{0}"'.format( self.error ) )
+
     if self.rc != self.expected_rc:
-      return Exception( 'Command returned "{0}", expected "{1}"'.format( self.rc, self.expected_rc ) )
+      return ExecutionError( 'Command returned "{0}", expected "{1}"'.format( self.rc, self.expected_rc ) )
     else:
       return True
 
@@ -713,10 +747,11 @@ class execute( ExternalFunction ):
     return ( 'execute', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'username': self.username, 'password': self.password, 'program': program, 'args': args, 'dir': self.dir, 'timeout': self.timeout } )
 
   def fromSubcontractor( self, data ):
-    self.rc = data[ 'rc' ]
+    self.rc = data.get( 'rc', None )
+    self.error = data.get( 'error', None )
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.command, self.dir, self.expected_rc, self.rc )
+    return ( self.connection_paramaters, self.uuid, self.name, self.username, self.password, self.command, self.dir, self.expected_rc, self.rc, self.error )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
@@ -728,6 +763,99 @@ class execute( ExternalFunction ):
     self.dir = state[6]
     self.expected_rc = state[7]
     self.rc = state[8]
+    self.error = state[9]
+
+
+class mark_as_template( ExternalFunction ):
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.uuid = foundation.vcenter_uuid
+    self.name = foundation.locator
+    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.as_template = None
+    self.complete = None
+
+  @property
+  def done( self ):
+    return self.complete is True
+
+  @property
+  def message( self ):
+    if self.complete is True:
+      return 'VM Marked as Template'
+    else:
+      return 'Waiting VM to get Marked'
+
+  def setup( self, parms ):
+    try:
+      self.as_template = bool( parms.get( 'as_template', True ) )
+    except ValueError:
+      raise ParamaterError( 'as_template', 'must be boolean' )
+    except KeyError:
+      pass
+
+  def toSubcontractor( self ):
+    return ( 'mark_as_template', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'as_template': self.as_template } )
+
+  def fromSubcontractor( self, data ):
+    self.complete = True
+
+  def __getstate__( self ):
+    return ( self.connection_paramaters, self.uuid, self.name, self.as_template, self.complete )
+
+  def __setstate__( self, state ):
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.as_template = state[3]
+    self.complete = state[4]
+
+
+class export( ExternalFunction ):
+  def __init__( self, foundation, *args, **kwargs ):
+    super().__init__( *args, **kwargs )
+    self.uuid = foundation.vcenter_uuid
+    self.name = foundation.locator
+    self.connection_paramaters = foundation.vcenter_complex.connection_paramaters
+    self.url = None
+    self.location = None
+
+  @property
+  def done( self ):
+    return self.location is not None
+
+  @property
+  def message( self ):
+    if self.location is not None:
+      return 'Exported to "{0}"'.format( self.location )
+    else:
+      return 'Waiting VM to be Exported'
+
+  def setup( self, parms ):
+    try:
+      self.url = parms.get( 'url' )
+    except KeyError:
+      raise ParamaterError( 'url', 'required' )
+
+  @property
+  def value( self ):
+    return self.handle
+
+  def toSubcontractor( self ):
+    return ( 'export', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name, 'url': self.url } )
+
+  def fromSubcontractor( self, data ):
+    self.location = data[ 'location' ]
+
+  def __getstate__( self ):
+    return ( self.connection_paramaters, self.uuid, self.name, self.url, self.location )
+
+  def __setstate__( self, state ):
+    self.connection_paramaters = state[0]
+    self.uuid = state[1]
+    self.name = state[2]
+    self.url = state[3]
+    self.location = state[4]
 
 
 # plugin exports

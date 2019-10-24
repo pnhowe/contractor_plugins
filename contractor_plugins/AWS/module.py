@@ -12,7 +12,7 @@ NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.done = False
+    self.completed = False
     self.instance_id = None
     self.interface_list = []
     self.ip_address_map = {}
@@ -20,9 +20,17 @@ class create( ExternalFunction ):
     self.instance_paramaters = {}
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.completed is True
+
+  @property
+  def message( self ):
+    if self.completed is True:
+      if self.in_rollback:
+        return 'Instance Rolled Back'
+      else:
+        return 'Instance Created'
+
     else:
       if self.in_rollback:
         return 'Waiting for Instance Rollback'
@@ -69,7 +77,7 @@ class create( ExternalFunction ):
     if self.in_rollback:
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
-      self.done = data.get( 'done', False )
+      self.completed = data.get( 'done', False )
       self.instance_id = data.get( 'instance_id', None )
       self.interface_list = data.get( 'interface_list', [] )
       self.ip_address_map = data.get( 'ip_address_map', {} )
@@ -78,10 +86,10 @@ class create( ExternalFunction ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.done, self.in_rollback, self.instance_id, self.interface_list, self.ip_address_map, self.instance_paramaters )
+    return ( self.completed, self.in_rollback, self.instance_id, self.interface_list, self.ip_address_map, self.instance_paramaters )
 
   def __setstate__( self, state ):
-    self.done = state[0]
+    self.completed = state[0]
     self.in_rollback = state[1]
     self.instance_id = state[2]
     self.interface_list = state[3]
@@ -95,12 +103,16 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.instance_id = foundation.awsec2_instance_id
     self.name = foundation.locator
-    self.done = None
+    self.completed = None
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.completed is True
+
+  @property
+  def message( self ):
+    if self.completed:
+      return 'Instance Destroyed'
     else:
       return 'Waiting for Instance Destruction'
 
@@ -108,13 +120,13 @@ class destroy( ExternalFunction ):
     return ( 'destroy', { 'instance_id': self.instance_id, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
-    self.done = True
+    self.completed = True
 
   def __getstate__( self ):
-    return ( self.done, self.instance_id, self.name )
+    return ( self.completed, self.instance_id, self.name )
 
   def __setstate__( self, state ):
-    self.done = state[0]
+    self.completed = state[0]
     self.instance_id = state[1]
     self.name = state[2]
 
@@ -132,11 +144,12 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     pass
 
   @property
-  def ready( self ):
-    if self.desired_state == self.curent_state:
-      return True
-    else:
-      return 'Power curently "{0}" waiting for "{1}"'.format( self.curent_state, self.desired_state )
+  def done( self ):
+    return self.desired_state == self.curent_state
+
+  @property
+  def message( self ):
+    return 'Power curently "{0}" waiting for "{1}"'.format( self.curent_state, self.desired_state )
 
   def rollback( self ):
     self.curent_state = None
@@ -167,11 +180,15 @@ class power_state( ExternalFunction ):
     self.state = None
 
   @property
-  def ready( self ):
-    if self.state is not None:
-      return True
-    else:
-      return 'Retrieving for Power State'
+  def done( self ):
+    return self.state is not None
+
+  @property
+  def message( self ):
+    if self.state is None:
+        return 'Retrieving for Power State'
+
+    return 'Power State at "{0}"'.format( self.state )
 
   @property
   def value( self ):

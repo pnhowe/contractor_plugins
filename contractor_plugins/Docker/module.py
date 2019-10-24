@@ -14,20 +14,28 @@ class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.host = None
-    self.done = False
+    self.complete = False
     self.docker_id = None
     self.in_rollback = False
     self.docker_paramaters = {}
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.complete is True
+
+  @property
+  def message( self ):
+    if self.complete is True:
+      if self.in_rollback:
+        return 'Container Rolled Back'
+      else:
+        return 'Container Created'
+
     else:
       if self.in_rollback:
-        return 'Waiting for Container Rollback'
+        return 'Container for Resource Rollback'
       else:
-        return 'Waiting for Container Creation'
+        return 'Container for Resource Creation'
 
   @property
   def value( self ):
@@ -84,18 +92,18 @@ class create( ExternalFunction ):
     if self.in_rollback:
       self.in_rollback = not data.get( 'rollback_done', False )
     else:
-      self.done = data.get( 'done', False )
+      self.complete = data.get( 'done', False )
       self.docker_id = data.get( 'id', None )
 
   def rollback( self ):
     self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.host, self.done, self.in_rollback, self.docker_id, self.docker_paramaters )
+    return ( self.host, self.complete, self.in_rollback, self.docker_id, self.docker_paramaters )
 
   def __setstate__( self, state ):
     self.host = state[0]
-    self.done = state[1]
+    self.complete = state[1]
     self.in_rollback = state[2]
     self.docker_id = state[3]
     self.docker_paramaters = state[4]
@@ -108,12 +116,16 @@ class destroy( ExternalFunction ):
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
     self.host = foundation.docker_host.host_ip
-    self.done = None
+    self.complete = None
 
   @property
-  def ready( self ):
-    if self.done is True:
-      return True
+  def done( self ):
+    return self.complete is True
+
+  @property
+  def message( self ):
+    if self.complete is True:
+      return 'Container Destroyed'
     else:
       return 'Waiting for Container Destruction'
 
@@ -121,13 +133,13 @@ class destroy( ExternalFunction ):
     return ( 'destroy', { 'docker_id': self.docker_id, 'name': self.name, 'host': self.host } )
 
   def fromSubcontractor( self, data ):
-    self.done = True
+    self.complete = True
 
   def __getstate__( self ):
-    return ( self.done, self.docker_id, self.name, self.host )
+    return ( self.complete, self.docker_id, self.name, self.host )
 
   def __setstate__( self, state ):
-    self.done = state[0]
+    self.complete = state[0]
     self.docker_id = state[1]
     self.name = state[2]
     self.host = state[3]
@@ -193,11 +205,12 @@ class start_stop( ExternalFunction ):  # TODO: need a delay after each power com
     pass
 
   @property
-  def ready( self ):
-    if self.desired_state == self.curent_state:
-      return True
-    else:
-      return 'State curently "{0}" waiting for "{1}"'.format( self.curent_state, self.desired_state )
+  def done( self ):
+    return self.desired_state == self.curent_state
+
+  @property
+  def message( self ):
+    return 'State curently "{0}" waiting for "{1}"'.format( self.curent_state, self.desired_state )
 
   def rollback( self ):
     self.curent_state = None
@@ -230,11 +243,15 @@ class state( ExternalFunction ):
     self.state = None
 
   @property
-  def ready( self ):
-    if self.state is not None:
-      return True
-    else:
-      return 'Retrieving State'
+  def done( self ):
+    return self.state is not None
+
+  @property
+  def message( self ):
+    if self.state is None:
+        return 'Retrieving for State'
+
+    return 'State at "{0}"'.format( self.state )
 
   @property
   def value( self ):

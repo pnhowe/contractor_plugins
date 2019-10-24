@@ -13,9 +13,13 @@ class execute( ExternalFunction ):
     self.rc = None
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.rc is not None
+
+  @property
+  def message( self ):
     if self.rc is not None:
-      return True
+      return 'Execution Returned "{0}"'.format( self.rc )
     else:
       return 'Waiting for Execution Results'
 
@@ -77,9 +81,13 @@ class file( ExternalFunction ):
     self.rc = None
 
   @property
-  def ready( self ):
+  def done( self ):
+    return self.rc is not None
+
+  @property
+  def message( self ):
     if self.rc is not None:
-      return True
+      return 'File Copy Results "{0}"'.format( self.rc )
     else:
       return 'Waiting for File Copy'
 
