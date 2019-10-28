@@ -41,10 +41,18 @@ class VirtualBoxComplex( Complex ):
 
   @property
   def connection_paramaters( self ):
+    if self.virtualbox_password == '_VAULT_':
+      creds = self.virtualbox_username
+
+    else:
+      creds = {
+                'username': self.virtualbox_username,
+                'password': self.virtualbox_password
+              }
+
     return {
               'host': self.members.get().primary_address.ip_address,
-              'username': self.virtualbox_username,
-              'password': self.virtualbox_password,
+              'credentials': creds
             }
 
   def newFoundation( self, hostname ):
