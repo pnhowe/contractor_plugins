@@ -14,7 +14,7 @@ sflinks = [ [ 'linux-base', 'amt-base' ] ]
 foundation.wait_for_poweroff()
 
 begin( description='Set RTC' )
-  dhcp.set_pxe( interface=structure.provisioning_interface, pxe='set-rtc' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='set-rtc' )
   foundation.power_on()
   delay( seconds=60 )
   foundation.wait_for_poweroff()
@@ -27,7 +27,7 @@ end
 foundation.power_off()
 
 begin( description='Wipe Disks' )
-  dhcp.set_pxe( interface=structure.provisioning_interface, pxe='disk-wipe' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='disk-wipe' )
   foundation.power_on()
   delay( seconds=60 )
   foundation.wait_for_poweroff()
