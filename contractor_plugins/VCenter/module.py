@@ -345,7 +345,7 @@ class datastore_list( ExternalFunction ):
 
   @property
   def message( self ):
-    if self.result is not None:
+    if self.datastore_list is not None:
       return 'Datastore List Length: "{0}"'.format( len( self.datastore_list ) )
     else:
       return 'Waiting for Datastore List'

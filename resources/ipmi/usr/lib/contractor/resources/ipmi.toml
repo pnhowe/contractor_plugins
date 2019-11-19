@@ -16,10 +16,24 @@ begin()
   pause( msg="IPMI Link test failed, resume to try again." )
 end
 foundation.wait_for_poweroff()
+
+begin( description='Set RTC' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='set-rtc' )
+  foundation.power_on()
+  delay( seconds=60 )
+  foundation.wait_for_poweroff()
+end
 """
 
 [ script.ipmi-destroy ]
   description = 'Destroy IPMI Server'
   script = """# Decommission IPMI Server
 foundation.power_off()
+
+begin( description='Wipe Disks' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='disk-wipe' )
+  foundation.power_on()
+  delay( seconds=60 )
+  foundation.wait_for_poweroff()
+end
 """
