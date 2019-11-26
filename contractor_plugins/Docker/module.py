@@ -69,9 +69,9 @@ class create( ExternalFunction ):
       pass
 
     try:
-      self.host = self.getScriptValue( 'foundation', 'docker_host' )
+      self.host = self.getScriptValue( 'foundation', 'docker_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_host: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation docker_complex: {0}'.format( e ) )
 
     self.docker_paramaters = {
                                'name': name,
@@ -115,7 +115,7 @@ class destroy( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.host = foundation.docker_host.host_ip
+    self.host = foundation.docker_complex.host_ip
     self.complete = None
 
   @property
@@ -196,7 +196,7 @@ class start_stop( ExternalFunction ):  # TODO: need a delay after each power com
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.host = foundation.docker_host.host_ip
+    self.host = foundation.docker_complex.host_ip
     self.desired_state = state
     self.curent_state = None
     self.sent = False
@@ -239,7 +239,7 @@ class state( ExternalFunction ):
     super().__init__( *args, **kwargs )
     self.docker_id = foundation.docker_id
     self.name = foundation.locator
-    self.host = foundation.docker_host.host_ip
+    self.host = foundation.docker_complex.host_ip
     self.state = None
 
   @property

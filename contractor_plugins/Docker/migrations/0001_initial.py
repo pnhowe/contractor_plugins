@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('foundation_ptr', models.OneToOneField(to='Building.Foundation', serialize=False, auto_created=True, parent_link=True, primary_key=True)),
                 ('docker_id', models.CharField(null=True, max_length=64, blank=True)),
-                ('docker_host', models.ForeignKey(to='Docker.DockerComplex', on_delete=django.db.models.deletion.PROTECT)),
+                ('docker_complex', models.ForeignKey(to='Docker.DockerComplex', on_delete=django.db.models.deletion.PROTECT)),
             ],
             bases=('Building.foundation',),
         ),

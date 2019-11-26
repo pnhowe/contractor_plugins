@@ -1,7 +1,7 @@
 sflinks = [ [ 'linux-base', 'docker-container-base' ] ]
 
-[ foundation.docker-continaer-base ]
-  description = 'Base VCenter VM'
+[ foundation.docker-container-base ]
+  description = 'Base Docker Container'
   scripts = { 'create' = 'docker-container-create', 'destroy' = 'docker-container-destroy' }
   foundation_types = [ 'Docker' ]
   config_values = {}
