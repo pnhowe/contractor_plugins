@@ -7,6 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('Survey', '0001_initial'),
         ('Building', '0002_initial2'),
     ]
 
@@ -14,10 +15,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AMTFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(to='Building.Foundation', serialize=False, primary_key=True, parent_link=True, auto_created=True)),
-                ('amt_username', models.CharField(max_length=16, default='admin')),
+                ('foundation_ptr', models.OneToOneField(primary_key=True, to='Building.Foundation', serialize=False, auto_created=True, parent_link=True)),
+                ('amt_username', models.CharField(default='admin', max_length=16)),
                 ('amt_password', models.CharField(max_length=16)),
                 ('amt_ip_address', models.CharField(max_length=30)),
+                ('plot', models.ForeignKey(to='Survey.Plot')),
             ],
             bases=('Building.foundation',),
         ),

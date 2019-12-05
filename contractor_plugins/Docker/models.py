@@ -7,6 +7,7 @@ from contractor.Site.models import Site
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.BluePrint.models import FoundationBluePrint
+from contractor.lib.config import getConfig, mergeValues
 
 from contractor_plugins.Docker.module import start_stop, state, destroy, map_ports, unmap_ports
 
@@ -28,8 +29,10 @@ class DockerComplex( Complex ):
     return 'Docker'
 
   @property
-  def host_ip( self ):
-    return self.members.get().primary_address.ip_address
+  def connection_paramaters( self ):
+    return {
+              'host': self.members.get().primary_address.ip_address
+            }
 
   def newFoundation( self, hostname ):
     foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
@@ -58,6 +61,18 @@ class DockerComplex( Complex ):
     return 'DockerComplex {0}'.format( self.pk )
 
 
+def _containerSpec( foundation ):
+  result = {}
+
+  structure_config = getConfig( foundation.structure )
+  structure_config = mergeValues( structure_config )
+
+  result[ 'image' ] = structure_config[ 'docker_image' ]
+  result[ 'port_list' ] = structure_config.get( 'port_list', [] )
+
+  return result
+
+
 @cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=[ 'docker_id' ] )
 class DockerFoundation( Foundation ):
   docker_complex = models.ForeignKey( DockerComplex, on_delete=models.PROTECT )
@@ -69,6 +84,7 @@ class DockerFoundation( Foundation ):
 
     result[ 'docker_id' ] = ( lambda foundation: foundation.docker_id, None )
     result[ 'docker_complex' ] = ( lambda foundation: foundation.docker_complex, None )
+    result[ 'docker_containerspec'] = ( lambda foundation: _containerSpec( foundation ), None )
 
     if write_mode is True:
       result[ 'docker_id' ] = ( result[ 'docker_id' ][0], lambda foundation, val: setattr( foundation, 'docker_id', val ) )
@@ -92,26 +108,6 @@ class DockerFoundation( Foundation ):
     result.update( { '_docker_id': self.docker_id } )
     result.update( { '_docker_complex': self.docker_complex.name } )
 
-    # this should be done the same way it is done for vcenter
-    #
-    # structure_blueprint_config = self.structure.blueprint.getConfig()
-    # _structureConfig( self.structure, [], structure_blueprint_config )  # TODO: need a getConfig (above) that only does the structure and it's blueprint
-    #
-    # try:
-    #   result.update( { 'docker_image': structure_blueprint_config[ 'docker_image' ] } )
-    # except KeyError:
-    #   pass
-    #
-    # try:
-    #   result.update( { 'docker_port_map': structure_blueprint_config[ 'docker_port_map' ] } )
-    # except KeyError:
-    #   pass
-    #
-    # try:
-    #   result.update( { 'docker_port_list': structure_blueprint_config[ 'docker_port_list' ] } )
-    # except KeyError:
-    #   pass
-
     return result
 
   @property
@@ -124,7 +120,7 @@ class DockerFoundation( Foundation ):
 
   @property
   def class_list( self ):
-    return [ 'Docker' ]
+    return [ 'Container', 'Docker' ]
 
   @property
   def complex( self ):

@@ -11,9 +11,10 @@ sflinks = [ [ 'linux-base', 'docker-container-base' ] ]
 [ script.docker-container-create ]
   description = 'Create Docker Container'
   script = """# Create Docker Container
+container_spec = foundation.docker_containerspec
 begin( description='Docker Container Creation' )
-  foundation.map_ports( port_list=config.docker_port_list )
-  container = docker.create()
+  port_map = foundation.map_ports( container_spec=container_spec )
+  container = docker.create( container_spec=container_spec, port_map=port_map )
   foundation.docker_id = container[ 'docker_id' ]
 end
 """
