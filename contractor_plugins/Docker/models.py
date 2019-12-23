@@ -69,6 +69,8 @@ def _containerSpec( foundation ):
 
   result[ 'image' ] = structure_config[ 'docker_image' ]
   result[ 'port_list' ] = structure_config.get( 'port_list', [] )
+  result[ 'environment_map' ] = structure_config.get( 'environment_map', {} )
+  result[ 'command' ] = structure_config.get( 'docker_command', None )
 
   return result
 

@@ -68,7 +68,9 @@ class create( ExternalFunction ):
     self.docker_paramaters = {
                                'name': name,
                                'docker_image': container_spec[ 'image' ],
-                               'port_map': port_map
+                               'port_map': port_map,
+                               'environment_map': container_spec.get( 'environment_map', {} ),
+                               'command': container_spec.get( 'command', None )
                               }
 
   def toSubcontractor( self ):
@@ -148,8 +150,12 @@ class map_ports( object ):
     port_list = container_spec[ 'port_list' ]
     port_map = {}
     check_port = None
+    aviable_ports = self.complex.dockerport_set.select_for_update().filter( foundation__isnull=True )[ :len( port_list ) ]
+    if len( aviable_ports ) < len( port_list ):
+      raise Exception( 'Insufficient DockerPorts are Available' )
+
     for i in range( 0, len( port_list ) ):
-      dp = self.complex.dockerport_set.filter( foundation__isnull=True )[0]
+      dp = aviable_ports[i]
       dp.foundation = self.foundation
       dp.foundation_index = i
       dp.full_clean()
@@ -166,7 +172,7 @@ class map_ports( object ):
     self.structure.config_values[ 'docker_port_map' ] = port_map
     self.structure.config_values[ 'docker_check_port' ] = check_port
     self.structure.full_clean()
-    self.structure.save( update_fields=[ 'config_values' ] )
+    self.structure.save()
 
     return port_map
 
