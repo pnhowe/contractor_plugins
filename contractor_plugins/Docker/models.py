@@ -7,6 +7,7 @@ from contractor.Site.models import Site
 from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.BluePrint.models import FoundationBluePrint
+from contractor.lib.config import getConfig, mergeValues
 
 from contractor_plugins.Docker.module import start_stop, state, destroy, map_ports, unmap_ports
 
@@ -28,12 +29,14 @@ class DockerComplex( Complex ):
     return 'Docker'
 
   @property
-  def host_ip( self ):
-    return self.members.get().primary_address.ip_address
+  def connection_paramaters( self ):
+    return {
+              'host': self.members.get().primary_address.ip_address
+            }
 
   def newFoundation( self, hostname ):
     foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
-    foundation.docker_host = self
+    foundation.docker_complex = self
     foundation.full_clean()
     foundation.save()
 
@@ -58,9 +61,23 @@ class DockerComplex( Complex ):
     return 'DockerComplex {0}'.format( self.pk )
 
 
+def _containerSpec( foundation ):
+  result = {}
+
+  structure_config = getConfig( foundation.structure )
+  structure_config = mergeValues( structure_config )
+
+  result[ 'image' ] = structure_config[ 'docker_image' ]
+  result[ 'port_list' ] = structure_config.get( 'port_list', [] )
+  result[ 'environment_map' ] = structure_config.get( 'environment_map', {} )
+  result[ 'command' ] = structure_config.get( 'docker_command', None )
+
+  return result
+
+
 @cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=[ 'docker_id' ] )
 class DockerFoundation( Foundation ):
-  docker_host = models.ForeignKey( DockerComplex, on_delete=models.PROTECT )
+  docker_complex = models.ForeignKey( DockerComplex, on_delete=models.PROTECT )
   docker_id = models.CharField( max_length=64, blank=True, null=True )  # not going to do unique, there could be multiple docker hosts
 
   @staticmethod
@@ -68,7 +85,8 @@ class DockerFoundation( Foundation ):
     result = super( DockerFoundation, DockerFoundation ).getTscriptValues( write_mode )
 
     result[ 'docker_id' ] = ( lambda foundation: foundation.docker_id, None )
-    result[ 'docker_host' ] = ( lambda foundation: foundation.docker_host, None )
+    result[ 'docker_complex' ] = ( lambda foundation: foundation.docker_complex, None )
+    result[ 'docker_containerspec'] = ( lambda foundation: _containerSpec( foundation ), None )
 
     if write_mode is True:
       result[ 'docker_id' ] = ( result[ 'docker_id' ][0], lambda foundation, val: setattr( foundation, 'docker_id', val ) )
@@ -90,27 +108,7 @@ class DockerFoundation( Foundation ):
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_docker_id': self.docker_id } )
-    result.update( { '_docker_host': self.docker_host.name } )
-
-    # this should be done the same way it is done for vcenter
-    #
-    # structure_blueprint_config = self.structure.blueprint.getConfig()
-    # _structureConfig( self.structure, [], structure_blueprint_config )  # TODO: need a getConfig (above) that only does the structure and it's blueprint
-    #
-    # try:
-    #   result.update( { 'docker_image': structure_blueprint_config[ 'docker_image' ] } )
-    # except KeyError:
-    #   pass
-    #
-    # try:
-    #   result.update( { 'docker_port_map': structure_blueprint_config[ 'docker_port_map' ] } )
-    # except KeyError:
-    #   pass
-    #
-    # try:
-    #   result.update( { 'docker_port_list': structure_blueprint_config[ 'docker_port_list' ] } )
-    # except KeyError:
-    #   pass
+    result.update( { '_docker_complex': self.docker_complex.name } )
 
     return result
 
@@ -124,11 +122,11 @@ class DockerFoundation( Foundation ):
 
   @property
   def class_list( self ):
-    return [ 'Docker' ]
+    return [ 'Container', 'Docker' ]
 
   @property
   def complex( self ):
-    return self.docker_host
+    return self.docker_complex
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
@@ -144,8 +142,8 @@ class DockerFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.site.pk != self.docker_host.site.pk:
-      errors[ 'site' ] = 'Site must match the docker_host\'s site'
+    if self.site.pk != self.docker_complex.site.pk:
+      errors[ 'site' ] = 'Site must match the docker_complex\'s site'
 
     if errors:
       raise ValidationError( errors )
@@ -187,7 +185,7 @@ class DockerPort( models.Model ):
     if self.address_offset > 100 and self.address_offset < 0:
       errors[ 'address_offset' ] = 'must be from 0 to 100'
 
-    if self.foundation is not None and self.complex != self.foundation.docker_host:
+    if self.foundation is not None and self.complex != self.foundation.docker_complex:
       errors[ 'foundation' ] = 'Port\'s complex does not match the Foundation\'s complex'
 
     if errors:

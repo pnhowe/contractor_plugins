@@ -5,8 +5,9 @@ from cinp.orm_django import DjangoCInP as CInP
 
 from contractor.Site.models import Site
 from contractor.Building.models import Foundation, FOUNDATION_SUBCLASS_LIST
-from contractor.Foreman.lib import RUNNER_MODULE_LIST
+from contractor.Survey.models import Plot
 # from contractor.Utilities.models import RealNetworkInterface, Networked
+from contractor.Foreman.lib import RUNNER_MODULE_LIST
 
 from contractor_plugins.AMT.module import set_power, power_state, wait_for_poweroff
 
@@ -22,6 +23,7 @@ class AMTFoundation( Foundation ):  # , Networked ):
   amt_password = models.CharField( max_length=16 )
   # amt_interface = models.ForeignKey( RealNetworkInterface )
   amt_ip_address = models.CharField( max_length=30 )
+  plot = models.ForeignKey( Plot )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
