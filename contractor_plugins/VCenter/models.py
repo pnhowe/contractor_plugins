@@ -131,7 +131,7 @@ def _vmSpec( foundation ):
   return result
 
 
-@cinp.model( property_list=( 'state', 'type', 'class_list' ) )
+@cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=( 'vcenter_uuid', ) )
 class VCenterFoundation( Foundation ):
   vcenter_complex = models.ForeignKey( VCenterComplex, on_delete=models.PROTECT )
   vcenter_uuid = models.CharField( max_length=36, blank=True, null=True )  # not going to do unique, there could be lots of vcenter clusters
