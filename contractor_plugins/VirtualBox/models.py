@@ -103,7 +103,7 @@ def _vmSpec( foundation ):
   return result
 
 
-@cinp.model( property_list=( 'state', 'type', 'class_list' ) )
+@cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=( 'virtualbox_uuid', ) )
 class VirtualBoxFoundation( Foundation ):
   """
   Foundation for use with VirtualBoxComplex.  Foundation instances are tracked
