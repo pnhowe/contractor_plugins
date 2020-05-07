@@ -20,6 +20,7 @@ class Migration(migrations.Migration):
                 ('ipmi_password', models.CharField(max_length=16)),
                 ('ipmi_ip_address', models.CharField(max_length=30)),
                 ('plot', models.ForeignKey(to='Survey.Plot')),
+                ('ipmi_sol_port', models.CharField(choices=[('console', 'console'), ('ttyS0', 'ttyS0'), ('ttyS1', 'ttyS1'), ('ttyS2', 'ttyS2'), ('ttyS3', 'ttyS3')], default='ttyS1', max_length=7)),
             ],
             bases=('Building.foundation',),
         ),

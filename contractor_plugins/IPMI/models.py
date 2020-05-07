@@ -23,6 +23,7 @@ class IPMIFoundation( Foundation ):  # , Networked ):
   ipmi_password = models.CharField( max_length=16 )
   # ipmi_interface = models.ForeignKey( RealNetworkInterface )
   ipmi_ip_address = models.CharField( max_length=30 )
+  ipmi_sol_port = models.CharField( max_length=7, choices=( ( 'console', 'console' ), ( 'ttyS0', 'ttyS0' ), ( 'ttyS1', 'ttyS1' ), ( 'ttyS2', 'ttyS2' ), ( 'ttyS3', 'ttyS3' ) ), default='ttyS1' )
   plot = models.ForeignKey( Plot )
 
   @staticmethod
@@ -50,6 +51,10 @@ class IPMIFoundation( Foundation ):  # , Networked ):
     result[ 'ipmi_ip_address' ] = self.ipmi_ip_address
 
     return result
+
+  @property
+  def console( self ):
+    return self.ipmi_sol
 
   @property
   def subclass( self ):
