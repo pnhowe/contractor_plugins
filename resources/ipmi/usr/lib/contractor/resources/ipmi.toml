@@ -1,7 +1,7 @@
 sflinks = [ [ 'linux-base', 'ipmi-base' ] ]
 
 [ foundation.ipmi-base ]
-  description = 'Base IPMI VM'
+  description = 'Base IPMI'
   scripts = { 'create' = 'ipmi-create', 'destroy' = 'ipmi-destroy' }
   foundation_types = [ 'IPMI' ]
   config_values = {}

@@ -54,7 +54,7 @@ class IPMIFoundation( Foundation ):  # , Networked ):
 
   @property
   def console( self ):
-    return self.ipmi_sol
+    return self.ipmi_sol_port
 
   @property
   def subclass( self ):
