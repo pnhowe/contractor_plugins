@@ -89,8 +89,8 @@ def _vmSpec( foundation ):
   structure_config = mergeValues( structure_config )
 
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
-  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
-  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )  # in MiB
+  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )  # in GiB
 
   result[ 'virtualbox_guest_type' ] = structure_config.get( 'virtualbox_guest_type', 'Other' )
 

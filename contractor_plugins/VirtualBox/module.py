@@ -74,7 +74,7 @@ class create( ExternalFunction ):
       counter += 1
 
     self.vm_paramaters = {  # the defaults
-                           'disk_list': [ { 'name': 'sda', 'size': 5 } ],  # disk size in G
+                           'disk_list': [ { 'name': 'sda', 'size': 10 } ],  # disk size in GiB
                            'interface_list': interface_list,
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
@@ -93,7 +93,7 @@ class create( ExternalFunction ):
 
     if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
       raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
-    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
+    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MiB
       raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
 
     try:

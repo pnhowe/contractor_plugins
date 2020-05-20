@@ -7,26 +7,27 @@ sflinks = [ [ 'linux-base', 'proxmox-qemu-base' ] ]
   template = {}
   physical_interface_names = []
 [ foundation.proxmox-qemu-base.config_values ]
+  blank = 'blank'
 
-[ script.vcenter-vm-create ]
+[ script.proxmox-qemu-create ]
   description = 'Create Proxmox QEMU VM'
   script = """# Create Proxmox QEMU VM
 vm_spec = foundation.proxmox_vmspec
 
 begin( description='Locate Node' )
-  host_list = proxmox.node_list( min_memory=vm_spec[ 'memory_size' ], min_core=vm_spec[ 'core_count' ] )
+  node_list = proxmox.node_list( min_memory=vm_spec[ 'memory_size' ], min_cores=vm_spec[ 'core_count' ] )
 end
 
 begin( description='VM Creation' )
-  proxmos.create( node=node_list[0], vm_spec=vm_spec )
+  proxmox.create( node=node_list[0], vm_spec=vm_spec )
   interface_map = foundation.get_interface_map()
   foundation.set_interface_macs( interface_map=interface_map )
 end
 """
 
-[ script.vcenter-vm-destroy ]
-  description = 'Destroy VCenter VM'
-  script = """# Destory VCenter VM
+[ script.proxmox-qemu-destroy ]
+  description = 'Destroy Proxmox QEMU VM'
+  script = """# Destory Proxmox QEMU VM
 begin( description='VM Destruction' )
   foundation.power_off()
   foundation.destroy()

@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from cinp.orm_django import DjangoCInP as CInP
 
 from contractor.Site.models import Site
-from contractor.Building.models import Foundation, Complex, Structure, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
+from contractor.Building.models import Foundation, Complex, FOUNDATION_SUBCLASS_LIST, COMPLEX_SUBCLASS_LIST
 from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
@@ -20,21 +20,13 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.Proxmox.module' )
 
 
 @cinp.model( property_list=( 'state', 'type' ) )
-class ProxmoxComplex( Complex ):
-  proxmox_host = models.OneToOneField( Structure, help_text='set to Proxmox host, or Proxmox primary/UI host' )
+class ProxmoxComplex( Complex ):  # NOTE: will use the first member as the Host to send API requests to
   proxmox_username = models.CharField( max_length=50 )
   proxmox_password = models.CharField( max_length=50 )
 
   @property
   def subclass( self ):
     return self
-
-  @property
-  def state( self ):
-    if self.proxmox_host.state != 'built':
-      return 'planned'
-
-    return super().state
 
   @property
   def type( self ):
@@ -52,7 +44,7 @@ class ProxmoxComplex( Complex ):
               }
 
     return {
-              'host': self.proxmox_host.primary_address.ip_address,
+              'host': self.members.all()[0].primary_address.ip_address,
               'credentials': creds
             }
 
@@ -88,15 +80,15 @@ def _vmSpec( foundation ):
 
   result[ 'vmid' ] = foundation.proxmox_vmid
   result[ 'core_count' ] = structure_config.get( 'cpu_count', 1 )
-  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )  # in MiB
   # result[ 'swap_size' ] = structure_config.get( 'swap_size', 1024 ) # for lxc
-  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )
+  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )  # in GiB
   result[ 'type' ] = 'qemu'  # only support quemu right now
 
   return result
 
 
-@cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=( 'vcenter_uuid', ) )
+@cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=( 'proxmox_vmid', ) )
 class ProxmoxFoundation( Foundation ):
   proxmox_complex = models.ForeignKey( ProxmoxComplex, on_delete=models.PROTECT )
   proxmox_vmid = models.IntegerField( blank=True, null=True )  # not going to do unique, there could be lots of proxmox instances
@@ -145,7 +137,7 @@ class ProxmoxFoundation( Foundation ):
 
   @property
   def complex( self ):
-    return self.vcenter_complex
+    return self.proxmox_complex
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
@@ -162,7 +154,7 @@ class ProxmoxFoundation( Foundation ):
     errors = {}
 
     if not self.proxmox_vmid:
-      self.proxmox_vmid = random.randint( 100, 999999999 )  # found this by trial and error
+      self.proxmox_vmid = random.randint( 100, 999999999 )  # found this by trial and error, thanks Mark
       # TODO: make sure this randomally generated number isn't in use for this complex
 
     if self.proxmox_vmid < 100:

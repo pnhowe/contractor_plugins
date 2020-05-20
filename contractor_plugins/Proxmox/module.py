@@ -40,7 +40,7 @@ class create( ExternalFunction ):
 
     self.connection_paramaters = proxmox_complex.connection_paramaters
 
-    self.vm_paramaters = {}
+    self.vm_paramaters = { 'vmid': foundation.proxmox_vmid }
 
     try:
       self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
@@ -72,20 +72,25 @@ class create( ExternalFunction ):
       except ( ValueError, TypeError ):
         raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
 
-    if self.vm_paramaters[ 'core_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
+    if self.vm_paramaters[ 'core_count' ] > 64 or self.vm_paramaters[ 'core_count' ] < 1:
       raise ParamaterError( 'core_count', 'must be from 1 to 64')
-    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
+    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MiB
       raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
-    # if self.vm_paramaters[ 'swap_size' ] > 1048510 or self.vm_paramaters[ 'swap_size' ] < 512:  # in MB  for lxc
+    # if self.vm_paramaters[ 'swap_size' ] > 1048510 or self.vm_paramaters[ 'swap_size' ] < 512:  # in MiB  for lxc
     #   raise ParamaterError( 'swap_size', 'must be from 512 to 1048510' )
 
-    interface_type = 'virtio'
+    for key in ( 'proxmox_ostype', ):
+      try:
+        self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+      except KeyError:
+        pass
 
+    interface_type = 'virtio'
     interface_list = []
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
       interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name, 'type': interface_type } )
 
-    self.vm_paramaters[ 'disk_list' ] = [ { 'size': vm_spec.get( 'disk_size', 10 ), 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
+    self.vm_paramaters[ 'disk_list' ] = [ { 'size': vm_spec.get( 'disk_size', 10 ), 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in GiB
     self.vm_paramaters[ 'interface_list' ] = interface_list
     self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd'
 
@@ -110,6 +115,7 @@ class node_list( ExternalFunction ):
     self.node_list = None
     self.connection_paramaters = {}
     self.min_memory = None
+    self.min_cores = None
     self.cpu_scaler = None
     self.memory_scaler = None
 
@@ -151,21 +157,21 @@ class node_list( ExternalFunction ):
         raise ParamaterError( key, 'must be an integer' )
 
   def toSubcontractor( self ):
-    return ( 'node_list', { 'connection': self.connection_paramaters, 'min_memory': self.min_memory, 'min_cpu': self.min_cpu, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler } )
+    return ( 'node_list', { 'connection': self.connection_paramaters, 'min_memory': self.min_memory, 'min_cores': self.min_cores, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler } )
 
   def fromSubcontractor( self, data ):
     self.node_list = data[ 'node_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.min_memory, self.min_cpu, self.cpu_scaler, self.memory_scaler, self.node_list )
+    return ( self.connection_paramaters, self.min_memory, self.min_cores, self.cpu_scaler, self.memory_scaler, self.node_list )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
-    self.min_memory = state[3]
-    self.min_cpu = state[4]
-    self.cpu_scaler = state[5]
-    self.memory_scaler = state[6]
-    self.node_list = state[7]
+    self.min_memory = state[1]
+    self.min_cores = state[2]
+    self.cpu_scaler = state[3]
+    self.memory_scaler = state[4]
+    self.node_list = state[5]
 
 
 # other functions used by the proxmox foundation
@@ -397,7 +403,7 @@ class set_interface_macs():
 
 # plugin exports
 
-TSCRIPT_NAME = 'vcenter'
+TSCRIPT_NAME = 'proxmox'
 
 TSCRIPT_FUNCTIONS = {
                       'create': create,

@@ -21,7 +21,6 @@ class Migration(migrations.Migration):
                 ('complex_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='Building.Complex')),
                 ('proxmox_username', models.CharField(max_length=50)),
                 ('proxmox_password', models.CharField(max_length=50)),
-                ('proxmox_host', models.OneToOneField(help_text='set to Proxmox host, or Proxmox primary/UI host', on_delete=django.db.models.deletion.CASCADE, to='Building.Structure')),
             ],
             bases=('Building.complex',),
         ),
