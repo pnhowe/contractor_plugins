@@ -78,6 +78,10 @@ class VirtualBoxComplex( Complex ):
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'VirtualBoxComplex {0}'.format( self.pk )
 
@@ -180,6 +184,10 @@ class VirtualBoxFoundation( Foundation ):
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
 
   def __str__( self ):
     return 'VirtualBoxFoundation {0}'.format( self.pk )

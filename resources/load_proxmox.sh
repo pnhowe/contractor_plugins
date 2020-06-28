@@ -7,7 +7,7 @@ echo "Got curent version of '$2'"
 echo "Got previsous version of '$3'"
 
 echo "Enabeling Proxmox plugin..."
-/usr/lib/contractor/util/pluginctl enable /usr/lib/python3/dist-packages/contractor_plugins/Proxmox
+/usr/lib/contractor/util/pluginctl --builder=ProxmoxFoundation --builder=ProxmoxComplex --enable /usr/lib/python3/dist-packages/contractor_plugins/Proxmox
 
 echo "Loading Schema..."
 /usr/lib/contractor/util/manage.py migrate Proxmox

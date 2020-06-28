@@ -79,5 +79,9 @@ class AWSEC2Foundation( Foundation ):
   def checkAuth( user, method, id_list, action=None ):
     return True
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'AWSEC2Foundation {0}'.format( self.pk )

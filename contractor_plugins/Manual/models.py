@@ -46,6 +46,10 @@ class ManualComplex( Complex ):
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'ManualComplex {0}'.format( self.pk )
 
@@ -95,6 +99,10 @@ class ManualFoundation( Foundation ):
   def checkAuth( user, method, id_list, action=None ):
     return True
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'ManualFoundation {0}'.format( self.pk )
 
@@ -134,6 +142,10 @@ class ManualComplexedFoundation( Foundation ):
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
     return True
+
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
 
   def __str__( self ):
     return 'ManualComplexedFoundation {0}'.format( self.pk )

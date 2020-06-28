@@ -7,7 +7,7 @@ echo "Got curent version of '$2'"
 echo "Got previsous version of '$3'"
 
 echo "Enabeling VirtualBox plugin..."
-/usr/lib/contractor/util/pluginctl enable /usr/lib/python3/dist-packages/contractor_plugins/VirtualBox
+/usr/lib/contractor/util/pluginctl --builder=VirtualBoxFoundation --builder=VirtaulBoxComplex --enable /usr/lib/python3/dist-packages/contractor_plugins/VirtualBox
 
 echo "Loading Schema..."
 /usr/lib/contractor/util/manage.py migrate VirtualBox

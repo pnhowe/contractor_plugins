@@ -68,6 +68,10 @@ class ProxmoxComplex( Complex ):  # NOTE: will use the first member as the Host 
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'ProxmoxComplex {0}'.format( self.pk )
 
@@ -164,6 +168,7 @@ class ProxmoxFoundation( Foundation ):
       raise ValidationError( errors )
 
   class Meta:
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
     unique_together = ( ( 'proxmox_complex', 'proxmox_vmid' ), )
 
   def __str__( self ):

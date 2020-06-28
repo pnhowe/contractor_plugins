@@ -57,6 +57,10 @@ class DockerComplex( Complex ):
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'DockerComplex {0}'.format( self.pk )
 
@@ -148,6 +152,10 @@ class DockerFoundation( Foundation ):
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'DockerFoundation {0}'.format( self.pk )
 
@@ -192,6 +200,7 @@ class DockerPort( models.Model ):
       raise ValidationError( errors )
 
   class Meta:
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
     unique_together = ( ( 'foundation', 'foundation_index' ), )
 
   def __str__( self ):

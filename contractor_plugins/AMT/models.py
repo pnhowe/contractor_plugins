@@ -93,5 +93,9 @@ class AMTFoundation( Foundation ):  # , Networked ):
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'AMTFoundation {0}'.format( self.pk )

@@ -97,6 +97,10 @@ class AzureComplex( Complex ):
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'AzureComplex {0}'.format( self.pk )
 
@@ -176,6 +180,10 @@ class AzureFoundation( Foundation ):
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
     return True
+
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
 
   def __str__( self ):
     return 'AzureFoundation {0}'.format( self.pk )

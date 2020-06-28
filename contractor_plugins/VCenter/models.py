@@ -87,6 +87,10 @@ class VCenterComplex( Complex ):
     if errors:
       raise ValidationError( errors )
 
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+
   def __str__( self ):
     return 'VCenterComplex {0}'.format( self.pk )
 
@@ -206,6 +210,10 @@ class VCenterFoundation( Foundation ):
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    pass
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
 
   def __str__( self ):
     return 'VCenterFoundation {0}'.format( self.pk )
