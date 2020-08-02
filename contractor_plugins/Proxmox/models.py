@@ -48,8 +48,8 @@ class ProxmoxComplex( Complex ):  # NOTE: will use the first member as the Host 
               'credentials': creds
             }
 
-  def newFoundation( self, hostname ):
-    foundation = ProxmoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='proxmox-vm-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = ProxmoxFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='proxmox-quemu-base' ), locator=hostname )
     foundation.proxmox_complex = self
     foundation.full_clean()
     foundation.save()

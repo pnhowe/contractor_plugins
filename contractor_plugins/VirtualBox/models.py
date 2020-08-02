@@ -55,8 +55,8 @@ class VirtualBoxComplex( Complex ):
               'credentials': creds
             }
 
-  def newFoundation( self, hostname ):
-    foundation = VirtualBoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = VirtualBoxFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
     foundation.virtualbox_complex = self
     foundation.full_clean()
     foundation.save()

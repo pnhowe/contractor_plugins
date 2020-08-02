@@ -34,8 +34,8 @@ class DockerComplex( Complex ):
               'host': self.members.get().primary_address.ip_address
             }
 
-  def newFoundation( self, hostname ):
-    foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = DockerFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
     foundation.docker_complex = self
     foundation.full_clean()
     foundation.save()

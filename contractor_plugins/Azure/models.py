@@ -52,8 +52,8 @@ class AzureComplex( Complex ):
               'tenant_id': self.azure_tenant_id
             }
 
-  def newFoundation( self, hostname ):
-    foundation = AzureFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='azure-vm-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = AzureFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='azure-vm-base' ), locator=hostname )
     foundation.azure_complex = self
     foundation.full_clean()
     foundation.save()

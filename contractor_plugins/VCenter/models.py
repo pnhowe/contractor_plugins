@@ -61,8 +61,8 @@ class VCenterComplex( Complex ):
               'credentials': creds
             }
 
-  def newFoundation( self, hostname ):
-    foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = VCenterFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
     foundation.vcenter_complex = self
     foundation.full_clean()
     foundation.save()
