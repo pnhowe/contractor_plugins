@@ -49,7 +49,7 @@ class ProxmoxComplex( Complex ):  # NOTE: will use the first member as the Host 
             }
 
   def newFoundation( self, hostname, site ):
-    foundation = ProxmoxFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='proxmox-quemu-base' ), locator=hostname )
+    foundation = ProxmoxFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='proxmox-qemu-base' ), locator=hostname )
     foundation.proxmox_complex = self
     foundation.full_clean()
     foundation.save()
