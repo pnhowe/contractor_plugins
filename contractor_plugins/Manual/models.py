@@ -37,7 +37,7 @@ class ManualComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -47,8 +47,7 @@ class ManualComplex( Complex ):
       raise ValidationError( errors )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'ManualComplex {0}'.format( self.pk )
@@ -97,11 +96,10 @@ class ManualFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'ManualFoundation {0}'.format( self.pk )
@@ -141,11 +139,10 @@ class ManualComplexedFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'ManualComplexedFoundation {0}'.format( self.pk )

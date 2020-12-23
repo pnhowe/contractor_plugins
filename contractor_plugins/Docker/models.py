@@ -45,7 +45,7 @@ class DockerComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -58,8 +58,7 @@ class DockerComplex( Complex ):
       raise ValidationError( errors )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'DockerComplex {0}'.format( self.pk )
@@ -140,7 +139,7 @@ class DockerFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -153,8 +152,7 @@ class DockerFoundation( Foundation ):
       raise ValidationError( errors )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'DockerFoundation {0}'.format( self.pk )
@@ -181,7 +179,7 @@ class DockerPort( models.Model ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, verb, id_list, action=None ):
-    return True
+    return cinp.basic_auth_check( user, verb, DockerPort )
 
   def clean( self, *args, **kwargs ):  # TODO: do not allow port or address_offset to change, or find a way to make changes propagate
     super().clean( *args, **kwargs )

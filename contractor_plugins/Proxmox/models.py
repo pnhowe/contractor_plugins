@@ -59,7 +59,7 @@ class ProxmoxComplex( Complex ):  # NOTE: will use the first member as the Host 
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -69,8 +69,7 @@ class ProxmoxComplex( Complex ):  # NOTE: will use the first member as the Host 
       raise ValidationError( errors )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'ProxmoxComplex {0}'.format( self.pk )
@@ -151,7 +150,7 @@ class ProxmoxFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -168,7 +167,7 @@ class ProxmoxFoundation( Foundation ):
       raise ValidationError( errors )
 
   class Meta:
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
     unique_together = ( ( 'proxmox_complex', 'proxmox_vmid' ), )
 
   def __str__( self ):

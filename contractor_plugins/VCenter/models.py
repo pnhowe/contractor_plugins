@@ -72,7 +72,7 @@ class VCenterComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -88,8 +88,7 @@ class VCenterComplex( Complex ):
       raise ValidationError( errors )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'VCenterComplex {0}'.format( self.pk )
@@ -202,7 +201,7 @@ class VCenterFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -212,8 +211,7 @@ class VCenterFoundation( Foundation ):
       raise ValidationError( errors )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'VCenterFoundation {0}'.format( self.pk )
