@@ -18,8 +18,8 @@ FOUNDATION_SUBCLASS_LIST.append( 'vcenterfoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'vcentercomplex' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.VCenter.module' )
 
-datacenter_name_regex = re.compile( '^[a-zA-Z0-9][a-zA-Z0-9_\-]*$' )
-cluster_name_regex = re.compile( '^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*$' )
+datacenter_name_regex = re.compile( r'^[a-zA-Z0-9][a-zA-Z0-9_\-]*$' )
+cluster_name_regex = re.compile( r'^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*$' )
 
 
 @cinp.model( property_list=( 'state', 'type' ) )

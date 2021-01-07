@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause, ExecutionError
 
-NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
+NAME_REGEX = re.compile( r'^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
 
 
@@ -302,12 +302,12 @@ class create_datastore( ExternalFunction ):
 
     try:
       self.name = parms[ 'name' ]
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'name', 'required' )
 
     try:
       self.model = parms[ 'model' ]
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'model', 'required' )
 
   def toSubcontractor( self ):
@@ -366,7 +366,7 @@ class datastore_list( ExternalFunction ):
 
     try:
       self.host = parms.get( 'host' )
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'host', 'Required' )
 
     try:
@@ -415,7 +415,7 @@ class network_list( ExternalFunction ):
   @property
   def message( self ):
     if self.network_list is not None:
-      return 'Network List Length: "(0)"'.format( len( self.network_list ) )
+      return 'Network List Length: "{0}"'.format( len( self.network_list ) )
     else:
       return 'Waiting for Network List'
 
@@ -435,7 +435,7 @@ class network_list( ExternalFunction ):
 
     try:
       self.host = parms.get( 'host' )
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'host', 'Required' )
 
     self.name_regex = parms.get( 'name_regex', None )

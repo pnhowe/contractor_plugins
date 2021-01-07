@@ -18,8 +18,8 @@ FOUNDATION_SUBCLASS_LIST.append( 'azurefoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'azurecomplex' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.Azure.module' )
 
-uuid_regex = re.compile( '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' )
-resource_group_regex = re.compile( '^[-\w\._\(\)]+$' )  # from https://docs.microsoft.com/en-us/rest/api/resources/resourcegroups/createorupdate
+uuid_regex = re.compile( r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' )
+resource_group_regex = re.compile( r'^[-\w\._\(\)]+$' )  # from https://docs.microsoft.com/en-us/rest/api/resources/resourcegroups/createorupdate
 
 
 @cinp.model( property_list=( 'state', 'type' ) )
