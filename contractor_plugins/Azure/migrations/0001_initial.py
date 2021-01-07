@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AzureFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(parent_link=True, primary_key=True, to='Building.Foundation', serialize=False, auto_created=True)),
+                ('foundation_ptr', models.OneToOneField(parent_link=True, primary_key=True, to='Building.Foundation', serialize=False, auto_created=True,on_delete=models.CASCADE)),
                 ('azure_resource_name', models.CharField(blank=True, null=True, max_length=64)),
                 ('azure_complex', models.ForeignKey(to='Azure.AzureComplex', on_delete=django.db.models.deletion.PROTECT)),
             ],

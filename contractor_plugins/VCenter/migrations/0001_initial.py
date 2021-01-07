@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('vcenter_password', models.CharField(max_length=50)),
                 ('vcenter_datacenter', models.CharField(max_length=50, help_text='set to "ha-datacenter" for ESX hosts')),
                 ('vcenter_cluster', models.CharField(max_length=50, help_text='set to the hostname (ie: "localhost.") for ESX hosts')),
-                ('vcenter_host', models.ForeignKey(to='Building.Structure', help_text='set to VCenter or the ESX host, if ESX host, leave members empty')),
+                ('vcenter_host', models.ForeignKey(to='Building.Structure', help_text='set to VCenter or the ESX host, if ESX host, leave members empty',on_delete=models.CASCADE)),
             ],
             bases=('Building.complex',),
         ),

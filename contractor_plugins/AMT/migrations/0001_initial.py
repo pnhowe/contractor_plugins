@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('amt_username', models.CharField(default='admin', max_length=16)),
                 ('amt_password', models.CharField(max_length=16)),
                 ('amt_ip_address', models.CharField(max_length=30)),
-                ('plot', models.ForeignKey(to='Survey.Plot')),
+                ('plot', models.ForeignKey(to='Survey.Plot',on_delete=models.CASCADE)),
             ],
             bases=('Building.foundation',),
         ),

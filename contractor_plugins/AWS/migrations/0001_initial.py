@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AWSEC2Foundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(auto_created=True, primary_key=True, parent_link=True, serialize=False, to='Building.Foundation')),
+                ('foundation_ptr', models.OneToOneField(auto_created=True, primary_key=True, parent_link=True, serialize=False, to='Building.Foundation',on_delete=models.CASCADE)),
                 ('awsec2_instance_id', models.CharField(max_length=19, blank=True, null=True)),
             ],
             bases=('Building.foundation',),

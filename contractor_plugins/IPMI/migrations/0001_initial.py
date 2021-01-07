@@ -15,11 +15,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='IPMIFoundation',
             fields=[
-                ('foundation_ptr', models.OneToOneField(primary_key=True, to='Building.Foundation', serialize=False, auto_created=True, parent_link=True)),
+                ('foundation_ptr', models.OneToOneField(primary_key=True, to='Building.Foundation', serialize=False, auto_created=True, parent_link=True,on_delete=models.CASCADE)),
                 ('ipmi_username', models.CharField(max_length=16)),
                 ('ipmi_password', models.CharField(max_length=16)),
                 ('ipmi_ip_address', models.CharField(max_length=30)),
-                ('plot', models.ForeignKey(to='Survey.Plot')),
+                ('plot', models.ForeignKey(to='Survey.Plot',on_delete=models.CASCADE)),
                 ('ipmi_sol_port', models.CharField(choices=[('console', 'console'), ('ttyS0', 'ttyS0'), ('ttyS1', 'ttyS1'), ('ttyS2', 'ttyS2'), ('ttyS3', 'ttyS3')], default='ttyS1', max_length=7)),
             ],
             bases=('Building.foundation',),
