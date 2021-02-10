@@ -24,7 +24,7 @@ cluster_name_regex = re.compile( r'^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*$' )
 
 @cinp.model( property_list=( 'state', 'type' ) )
 class VCenterComplex( Complex ):
-  vcenter_host = models.ForeignKey( Structure, help_text='set to VCenter or the ESX host, if ESX host, leave members empty' )  # no need for unique, the same vcenter_host can be used for multiple clusters
+  vcenter_host = models.ForeignKey( Structure, on_delete=models.PROTECT, help_text='set to VCenter or the ESX host, if ESX host, leave members empty' )  # no need for unique, the same vcenter_host can be used for multiple clusters
   vcenter_username = models.CharField( max_length=50 )
   vcenter_password = models.CharField( max_length=50 )
   vcenter_datacenter = models.CharField( max_length=50, help_text='set to "ha-datacenter" for ESX hosts' )

@@ -1,0 +1,13 @@
+[ structure.vyos-base ]
+  description = 'Base VyOS'
+  parents = [ 'linux-base' ]
+  scripts = { 'dhcprelay' = 'vyos-dhcprelay'}
+[ structure.ubuntu-base.config_values ]
+  installer_pxe = 'image'
+  'vcenter_guest_id:VCenter' = 'otherLinux64Guest'
+  'virtualbox_guest_type:VirtualBox' = 'Linux_64'
+
+script.vyos-dhcprelay ]
+ description = 'Apply DHCpRelay Settings'
+ script = """vyos.apply( attribute='dhcp_relay' )
+"""

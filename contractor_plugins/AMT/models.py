@@ -23,7 +23,7 @@ class AMTFoundation( Foundation ):  # , Networked ):
   amt_password = models.CharField( max_length=16 )
   # amt_interface = models.ForeignKey( RealNetworkInterface )
   amt_ip_address = models.CharField( max_length=30 )
-  plot = models.ForeignKey( Plot )
+  plot = models.ForeignKey( Plot, on_delete=models.PROTECT )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
