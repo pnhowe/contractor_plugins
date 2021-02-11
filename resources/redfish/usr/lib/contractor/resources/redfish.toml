@@ -1,0 +1,35 @@
+sflinks = [ [ 'linux-base', 'redfish-base' ] ]
+
+[ foundation.redfish-base ]
+  description = 'Base Redfish'
+  scripts = { 'create' = 'redfish-create', 'destroy' = 'redfish-destroy' }
+  foundation_types = [ 'RedFish' ]
+  config_values = {}
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+
+[ script.redfish-create ]
+  description = 'Create RedFish Server'
+  script = """# Test and Configure RedFish Server
+foundation.wait_for_poweroff()
+
+begin( description='Set RTC' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='set-rtc' )
+  foundation.power_on()
+  delay( seconds=60 )
+  foundation.wait_for_poweroff()
+end
+"""
+
+[ script.redfish-destroy ]
+  description = 'Destroy RedFish Server'
+  script = """# Decommission RedFish Server
+foundation.power_off()
+
+begin( description='Wipe Disks' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='disk-wipe' )
+  foundation.power_on()
+  delay( seconds=60 )
+  foundation.wait_for_poweroff()
+end
+"""
