@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'aws-instance-base' ] ]
+sflinks = [ [ 'linux-base', 'aws-instance-base' ], [ 'manual-structure-base', 'aws-instance-base' ] ]
 
 [ foundation.aws-instance-base ]
   description = 'Generic AWS EC2 Instance'

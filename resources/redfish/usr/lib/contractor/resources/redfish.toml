@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'redfish-base' ] ]
+sflinks = [ [ 'linux-base', 'redfish-base' ], [ 'manual-structure-base', 'redfish-base' ] ]
 
 [ foundation.redfish-base ]
   description = 'Base Redfish'

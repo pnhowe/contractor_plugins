@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'ipmi-base' ] ]
+sflinks = [ [ 'linux-base', 'ipmi-base' ], [ 'manual-structure-base', 'ipmi-base' ] ]
 
 [ foundation.ipmi-base ]
   description = 'Base IPMI'

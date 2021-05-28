@@ -116,9 +116,7 @@ class node_list( ExternalFunction ):
     self.connection_paramaters = {}
     self.min_memory = None
     self.min_cores = None
-    self.cpu_scaler = None
-    self.memory_scaler = None
-    self.io_scaler = None
+    self.scalers = { 'cpu': 4, 'memory': 4, 'io': 8, 'vm': 1 }  # must be integers
 
   @property
   def done( self ):
@@ -143,7 +141,6 @@ class node_list( ExternalFunction ):
 
     self.connection_paramaters = proxmox_complex.connection_paramaters
 
-    # TODO: also add IO Delay - % of time spent waiting for io
     for key in ( 'min_memory', 'min_cores' ):  # memory in MB
       try:
         setattr( self, key, int( parms[ key ] ) )
@@ -152,29 +149,29 @@ class node_list( ExternalFunction ):
       except ( ValueError, TypeError ):
         raise ParamaterError( key, 'must be an integer' )
 
-    for key in ( 'cpu_scaler', 'memory_scaler', 'io_scaler' ):
+    for name in ( 'cpu', 'memory', 'io', 'vm' ):  # each is turned into a value from 0 -> 1, 1 being most desireable, then * by the scaler and added up, and sorted
       try:
-        setattr( self, key, int( parms.get( key, 1 ) ) )
+        self.scalers[ name ] = int( parms[ '{0}_scaler'.format( name ) ] )
+      except KeyError:
+        pass
       except ( ValueError, TypeError ):
-        raise ParamaterError( key, 'must be an integer' )
+        raise ParamaterError( '{0}_scaler'.format( name ), 'must be an integer' )
 
   def toSubcontractor( self ):
-    return ( 'node_list', { 'connection': self.connection_paramaters, 'min_memory': self.min_memory, 'min_cores': self.min_cores, 'cpu_scaler': self.cpu_scaler, 'memory_scaler': self.memory_scaler, 'io_scaler': self.io_scaler } )
+    return ( 'node_list', { 'connection': self.connection_paramaters, 'min_memory': self.min_memory, 'min_cores': self.min_cores, 'scalers': self.scalers } )
 
   def fromSubcontractor( self, data ):
     self.node_list = data[ 'node_list' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.min_memory, self.min_cores, self.cpu_scaler, self.memory_scaler, self.io_scaler, self.node_list )
+    return ( self.connection_paramaters, self.min_memory, self.min_cores, self.scalers, self.node_list )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.min_memory = state[1]
     self.min_cores = state[2]
-    self.cpu_scaler = state[3]
-    self.memory_scaler = state[4]
-    self.io_scaler = state[5]
-    self.node_list = state[6]
+    self.scalers = state[3]
+    self.node_list = state[4]
 
 
 # other functions used by the proxmox foundation

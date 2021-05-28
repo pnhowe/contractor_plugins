@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'vcenter-vm-base' ] ]
+sflinks = [ [ 'linux-base', 'vcenter-vm-base' ], [ 'manual-structure-base', 'vcenter-vm-base' ]  ]
 
 [ foundation.vcenter-vm-base ]
   description = 'Base VCenter VM'

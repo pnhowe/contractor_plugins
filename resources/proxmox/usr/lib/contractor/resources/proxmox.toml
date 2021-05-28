@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'proxmox-qemu-base' ] ]
+sflinks = [ [ 'linux-base', 'proxmox-qemu-base' ], [ 'manual-structure-base', 'proxmox-vm-base' ] ]
 
 [ foundation.proxmox-qemu-base ]
   description = 'Base Proxmox QEMU VM'

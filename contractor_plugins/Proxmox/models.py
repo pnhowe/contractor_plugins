@@ -1,4 +1,5 @@
 import random
+import re
 from django.db import models
 from django.core.exceptions import ValidationError
 
@@ -12,6 +13,7 @@ from contractor.lib.config import getConfig, mergeValues
 
 from contractor_plugins.Proxmox.module import set_power, power_state, wait_for_poweroff, destroy, get_interface_map, set_interface_macs
 
+proxmox_locator_regex = re.compile( r'^([a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?)$' )  # from /usr/share/perl5/PVE/JSONSchema.pm  pve_verify_dns_name
 cinp = CInP( 'Proxmox', '0.1' )
 
 FOUNDATION_SUBCLASS_LIST.append( 'proxmoxfoundation' )
@@ -162,6 +164,9 @@ class ProxmoxFoundation( Foundation ):
 
     if self.proxmox_vmid < 100:
       errors[ 'proxmox_vmid' ] = 'Min value is 100'
+
+    if not proxmox_locator_regex.match( self.locator ):
+      errors[ 'locator' ] = 'Invalid for Proxmox'
 
     if errors:
       raise ValidationError( errors )

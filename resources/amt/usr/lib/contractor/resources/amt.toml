@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'amt-base' ] ]
+sflinks = [ [ 'linux-base', 'amt-base' ], [ 'manual-structure-base', 'amt-base' ] ]
 
 [ foundation.amt-base ]
   description = 'Base AMT(Intell vPro)'

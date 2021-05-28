@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'virtualbox-vm-base' ] ]
+sflinks = [ [ 'linux-base', 'virtualbox-vm-base' ], [ 'manual-structure-base', 'virtualbox-vm-base' ]  ]
 
 [ foundation.virtualbox-vm-base ]
   description = 'Base VirtualBox VM'
