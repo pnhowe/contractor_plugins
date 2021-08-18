@@ -293,8 +293,8 @@ class power_state( ExternalFunction ):
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.vmid = state[1]
-    self.name = state[3]
-    self.state = state[2]
+    self.name = state[2]
+    self.state = state[3]
 
 
 class wait_for_poweroff( ExternalFunction ):
