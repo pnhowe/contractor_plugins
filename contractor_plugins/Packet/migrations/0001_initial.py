@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             name='PacketFoundation',
             fields=[
                 ('foundation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='Building.Foundation')),
-                ('packet_uuid', models.CharField(max_length=36)),
+                ('packet_uuid', models.CharField(max_length=36, blank=True, null=True)),
                 ('packet_complex', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='Packet.PacketComplex')),
             ],
             options={

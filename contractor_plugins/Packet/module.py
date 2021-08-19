@@ -1,6 +1,4 @@
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-
-from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause, ExecutionError
+from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
 
 MAX_POWER_SET_ATTEMPTS = 5
 
@@ -45,8 +43,8 @@ class create( ExternalFunction ):
 
     self.device_paramaters = {}
 
-    self.device_paramaters[ 'facility' ] = packet_complex.packet_facility  # 8ea03255-89f9-4e62-9d3f-8817db82ceed
-    self.device_paramaters[ 'project' ] = packet_complex.packet_project  # e3e314f9-08ce-41b8-80a9-1ad8665591ca
+    self.device_paramaters[ 'facility' ] = packet_complex.packet_facility
+    self.device_paramaters[ 'project' ] = packet_complex.packet_project
 
     try:
       self.device_paramaters[ 'description' ] = self.getScriptValue( 'foundation', 'locator' )

@@ -56,6 +56,7 @@ respkg:
 	cd resources && fakeroot respkg -b ../contractor-plugins-virtualbox_$(VERSION).respkg -n contractor-plugins-virtualbox -e $(VERSION) -c "Contractor Plugins - VirtualBox" -t load_virtualbox.sh -d virtualbox -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-azure_$(VERSION).respkg      -n contractor-plugins-azure      -e $(VERSION) -c "Contractor Plugins - Azure"      -t load_azure.sh      -d azure      -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-aws_$(VERSION).respkg        -n contractor-plugins-aws        -e $(VERSION) -c "Contractor Plugins - AWS"        -t load_aws.sh        -d aws        -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-packet_$(VERSION).respkg     -n contractor-plugins-packet     -e $(VERSION) -c "Contractor Plugins - Packet"     -t load_packet.sh     -d packet     -s contractor-os-base
 
 	cd resources && fakeroot respkg -b ../contractor-plugins-iputils_$(VERSION).respkg    -n contractor-plugins-ipuils     -e $(VERSION) -c "Contractor Plugins - IpUtils"    -t load_iputils.sh    -d iputils
 
@@ -69,7 +70,7 @@ respkg-file:
 .PHONY:: respkg-distros respkg-requires respkg respkg-file
 
 dpkg-distros:
-	echo ubuntu-xenial
+	echo ubuntu-bionic-base
 
 dpkg-requires:
 	echo dpkg-dev debhelper python3-dev python3-setuptools
@@ -79,6 +80,6 @@ dpkg:
 	touch dpkg
 
 dpkg-file:
-	echo $(shell ls ../contractor-plugins_*.deb):xenial
+	echo $(shell ls ../contractor-plugins_*.deb):bionic
 
 .PHONY:: dpkg-distros dpkg-requires dpkg dpkg-file

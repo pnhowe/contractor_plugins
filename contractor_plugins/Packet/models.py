@@ -92,7 +92,7 @@ def _deviceSpec( foundation ):
 @cinp.model( property_list=( 'state', 'type', 'class_list' ), read_only_list=( 'packet_uuid', ) )
 class PacketFoundation( Foundation ):
   packet_complex = models.ForeignKey( PacketComplex, on_delete=models.PROTECT )
-  packet_uuid = models.CharField( max_length=36 )
+  packet_uuid = models.CharField( max_length=36, blank=True, null=True )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
@@ -100,6 +100,7 @@ class PacketFoundation( Foundation ):
 
     result[ 'packet_complex' ] = ( lambda foundation: foundation.packet_complex, None )
     result[ 'packet_uuid' ] = ( lambda foundation: foundation.packet_uuid, None )
+    result[ 'packet_devicespec'] = ( lambda foundation: _deviceSpec( foundation ), None )
 
     if write_mode is True:
       result[ 'packet_uuid' ] = ( result[ 'packet_uuid' ][0], lambda foundation, val: setattr( foundation, 'packet_uuid', val ) )
@@ -140,7 +141,7 @@ class PacketFoundation( Foundation ):
 
   @property
   def complex( self ):
-    return self.vcenter_complex
+    return self.packet_complex
 
   @cinp.list_filter( name='site', paramater_type_list=[ { 'type': 'Model', 'model': Site } ] )
   @staticmethod
