@@ -73,7 +73,7 @@ dpkg-blueprints:
 	echo ubuntu-focal-base
 
 dpkg-requires:
-	echo dpkg-dev debhelper python3-dev python3-setuptools
+	echo dpkg-dev debhelper python3-dev python3-setuptools dh-python
 
 dpkg:
 	dpkg-buildpackage -b -us -uc
