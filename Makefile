@@ -25,8 +25,8 @@ dist-clean: clean
 
 .PHONY:: all install version clean dist-clean
 
-test-distros:
-	echo ubuntu-xenial
+test-blueprints:
+	echo ubuntu-bionic-base
 
 test-requires:
 	echo flake8 python3-pytest python3-pytest-cov python3-pytest-django python3-pytest-mock
@@ -37,10 +37,10 @@ lint:
 test:
 	py.test-3 -x --cov=contractor_plugins --cov-report html --cov-report term -vv contractor_plugins
 
-.PHONY:: test-distros test-requres test
+.PHONY:: test-blueprints test-requres test
 
-respkg-distros:
-	echo ubuntu-xenial
+respkg-blueprints:
+	echo ubuntu-bionic-base
 
 respkg-requires:
 	echo respkg fakeroot
@@ -67,9 +67,9 @@ respkg:
 respkg-file:
 	echo $(shell ls *.respkg)
 
-.PHONY:: respkg-distros respkg-requires respkg respkg-file
+.PHONY:: respkg-blueprints respkg-requires respkg respkg-file
 
-dpkg-distros:
+dpkg-blueprints:
 	echo ubuntu-bionic-base
 
 dpkg-requires:
@@ -82,4 +82,4 @@ dpkg:
 dpkg-file:
 	echo $(shell ls ../contractor-plugins_*.deb):bionic
 
-.PHONY:: dpkg-distros dpkg-requires dpkg dpkg-file
+.PHONY:: dpkg-blueprints dpkg-requires dpkg dpkg-file

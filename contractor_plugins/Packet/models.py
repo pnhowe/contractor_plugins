@@ -9,7 +9,7 @@ from contractor.Foreman.lib import RUNNER_MODULE_LIST
 from contractor.BluePrint.models import FoundationBluePrint
 from contractor.lib.config import getConfig, mergeValues
 
-from contractor_plugins.Packet.module import set_power, power_state, wait_for_poweroff, destroy
+from contractor_plugins.Packet.module import set_power, power_state, wait_for_poweroff, destroy, device_state, sync_networking_info
 
 cinp = CInP( 'Packet', '0.1' )
 
@@ -83,8 +83,10 @@ def _deviceSpec( foundation ):
   structure_config = getConfig( foundation.structure )
   structure_config = mergeValues( structure_config )
 
-  result[ 'packet_plan' ] = structure_config.get( 'packet_plan', '18e285e0-1872-11ea-8d71-362b9e155667' )  # 'c3.small.x86'
-  result[ 'packet_os' ] = structure_config.get( 'packet_os', 'ubuntu_20_04' )
+  result[ 'hostname' ] = foundation.structure.hostname
+  result[ 'plan' ] = structure_config.get( 'packet_plan', '18e285e0-1872-11ea-8d71-362b9e155667' )  # 'c3.small.x86'
+  result[ 'os' ] = structure_config.get( 'packet_os', 'ubuntu_20_04' )
+  result[ 'interface_map' ] = structure_config[ '_interface_map' ]
 
   return result
 
@@ -115,6 +117,8 @@ class PacketFoundation( Foundation ):
     result[ 'power_state' ] = lambda foundation: ( 'packet', power_state( foundation ) )
     result[ 'wait_for_poweroff' ] = lambda foundation: ( 'packet', wait_for_poweroff( foundation ) )
     result[ 'destroy' ] = lambda foundation: ( 'packet', destroy( foundation ) )
+    result[ 'device_state' ] = lambda foundation: ( 'packet', device_state( foundation ) )
+    result[ 'sync_networking_info' ] = lambda foundation: ( 'packet', sync_networking_info( foundation ) )
 
     return result
 

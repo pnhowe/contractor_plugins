@@ -15,9 +15,22 @@ sflinks = [ [ 'linux-base', 'packet-device-base' ], [ 'manual-structure-base', '
 device_spec = foundation.packet_devicespec
 
 begin( description='Device Creation' )
-  device_uuid = vcenter.create( device_spec=device_spec )
+  device_uuid = packet.create( device_spec=device_spec )
   foundation.packet_uuid = device_uuid
+  foundation.sync_networking_info()
+  counter = 0
+  while ( counter < 60 ) do
+  begin()
+    delay( seconds=10 )
+    state = foundation.device_state()
+    if ( state == 'active' ) then goto done
+    message( msg=( ( 'waiting for device to provision, curently: "' . state ) . '"' ) )
+    counter = ( counter + 1 )
+  end
+  while( foundation.device_state() != 'active' ) do
+    error( msg='timeout waiting for device to provision' )
 end
+:done
 """
 
 [ script.packet-device-destroy ]
