@@ -30,10 +30,10 @@ class create( ExternalFunction ):
     return self.uuid
 
   def setup( self, parms ):
-    try:
-      foundation = self.getScriptValue( 'foundation', 'foundation' )
-    except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
+    # try:
+    #   foundation = self.getScriptValue( 'foundation', 'foundation' )
+    # except ValueError as e:
+    #   raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
 
     try:
       packet_complex = self.getScriptValue( 'foundation', 'packet_complex' )
