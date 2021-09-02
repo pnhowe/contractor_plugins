@@ -1,5 +1,5 @@
 Source: contractor-plugins
-Section: multiverse/python
+Section: multiverse/t3kton
 Priority: optional
 Maintainer: Peter Howe <pnhowe@gmail.com>
 Build-Depends: debhelper (>= 7), python3 (>= 3.6), python3-dev (>=3.4), python3-setuptools (>= 20.0), lsb-release

@@ -1,4 +1,12 @@
-contractor-plugins (0.8.0-1) bionic; urgency=medium
+contractor-plugins (0.9.0-1) focal; urgency=medium
+
+  * Updated to Focal
+  * Added packet
+  * fixes and updates
+
+ -- Peter Howe <pnhowe@gmail.com>  Thu, 02 Sep 2021 13:30:41 -0600
+
+contractor-plugins (0.8.0-1) focal; urgency=medium
 
   * Updated to Bionic
   * Goes with contractor 0.8.0

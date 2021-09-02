@@ -14,7 +14,7 @@ sflinks = [ [ 'linux-base', 'packet-device-base' ], [ 'manual-structure-base', '
   script = """# Create Packet Device
 device_spec = foundation.packet_devicespec
 
-begin( description='Device Creation' )
+begin( description='Device Creation', expected_time=10:00 )
   device_uuid = packet.create( device_spec=device_spec )
   foundation.packet_uuid = device_uuid
   foundation.sync_networking_info()
@@ -33,7 +33,7 @@ end
 :done
 """
 
-[ script.packet-device-destroy ]
+[ script.packet-device-destroy, expected_time=05:00 ]
   description = 'Destroy Packet Device'
   script = """# Destory Packet Device
 begin( description='Device Destruction' )
