@@ -6,6 +6,10 @@ from contractor.Utilities.models import Address
 MAX_POWER_SET_ATTEMPTS = 5
 
 
+def _extract_vlans( address_list ):
+  return list( set( [ i[ 'vlan' ] for i in address_list if i.get( 'vlan', False ) ] ) )
+
+
 # exported functions
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
@@ -30,10 +34,12 @@ class create( ExternalFunction ):
     return self.uuid
 
   def setup( self, parms ):
-    # try:
-    #   foundation = self.getScriptValue( 'foundation', 'foundation' )
-    # except ValueError as e:
-    #   raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
+    try:
+      foundation = self.getScriptValue( 'foundation', 'foundation' )
+    except ValueError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
+
+    structure = foundation.structure
 
     try:
       packet_complex = self.getScriptValue( 'foundation', 'packet_complex' )
@@ -63,7 +69,22 @@ class create( ExternalFunction ):
     self.device_paramaters[ 'hostname' ] = device_spec[ 'hostname' ]
     self.device_paramaters[ 'plan' ] = device_spec[ 'plan' ]
     self.device_paramaters[ 'operating_system' ] = device_spec[ 'os' ]
-    self.device_paramaters[ 'interface_map' ] = device_spec[ 'interface_map' ]
+
+    port_map = {}
+    address_map = {}
+    for iface in foundation.networkinterface_set.all():
+      address_map[ iface.name ] = structure.getAddressList( iface )
+      port_map[ iface.physical_location ] = { 'name': iface.name, 'network': iface.network.name, 'tagged_vlans': _extract_vlans( address_map[ iface.name ] ) }
+
+    for iface in structure.networkinterface_set.all():
+      iface = iface.subclass
+      address_map[ iface.name ] = structure.getAddressList( iface )
+      port_map[ iface.name ] = { 'name': iface.name, 'network': iface.network.name, 'tagged_vlans': _extract_vlans( address_map[ iface.name ] ) }
+      if iface.type == 'Aggregated':
+        port_map[ iface.name ][ 'interface_list' ] = [ iface.primary_interface.name ] + [ i.name for i in iface.secondary_interfaces.all() ]
+
+    self.device_paramaters[ 'port_map' ] = port_map
+    self.device_paramaters[ 'address_map' ] = address_map
 
   def toSubcontractor( self ):
     return ( 'create', { 'connection': self.connection_paramaters, 'device': self.device_paramaters } )

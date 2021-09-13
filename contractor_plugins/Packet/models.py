@@ -86,7 +86,6 @@ def _deviceSpec( foundation ):
   result[ 'hostname' ] = foundation.structure.hostname
   result[ 'plan' ] = structure_config.get( 'packet_plan', '18e285e0-1872-11ea-8d71-362b9e155667' )  # 'c3.small.x86'
   result[ 'os' ] = structure_config.get( 'packet_os', 'ubuntu_20_04' )
-  result[ 'interface_map' ] = structure_config[ '_interface_map' ]
 
   return result
 
