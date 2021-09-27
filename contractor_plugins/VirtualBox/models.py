@@ -72,7 +72,7 @@ class VirtualBoxComplex( Complex ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.pk and self.members.count() > 1:
+    if self.pk is not None and self.members.count() > 1:
       errors[ 'structure' ] = 'VirtualBox Complex support only one structure'
 
     if errors:
@@ -177,6 +177,11 @@ class VirtualBoxFoundation( Foundation ):
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
+
+    if self.pk is not None:
+      current = VirtualBoxFoundation.objects.get( pk=self.pk )
+      if ( self.virtualbox_uuid is not None or current.virtualbox_uuid is not None ) and current.virtualbox_complex != self.virtualbox_complex:
+        errors[ 'virtualbox_complex' ] = 'can not move complexes without first destroying'
 
     if self.site.pk != self.virtualbox_complex.site.pk:
       errors[ 'site' ] = 'Site must match the virtualbox_complex\'s site'

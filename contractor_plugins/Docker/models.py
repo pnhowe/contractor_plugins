@@ -51,7 +51,7 @@ class DockerComplex( Complex ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.pk and self.members.count() > 1:
+    if self.pk is not None and self.members.count() > 1:
       errors[ 'structure' ] = 'Docker Complex support only one structure'
 
     if errors:
@@ -144,6 +144,11 @@ class DockerFoundation( Foundation ):
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
+
+    if self.pk is not None:
+      current = DockerFoundation.objects.get( pk=self.pk )
+      if ( self.docker_id is not None or current.docker_id is not None ) and current.docker_complex != self.docker_complex:
+        errors[ 'docker_complex' ] = 'can not move complexes without first destroying'
 
     if self.site.pk != self.docker_complex.site.pk:
       errors[ 'site' ] = 'Site must match the docker_complex\'s site'

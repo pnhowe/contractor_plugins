@@ -207,6 +207,11 @@ class VCenterFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
+    if self.pk is not None:
+      current = VCenterFoundation.objects.get( pk=self.pk )
+      if ( self.vcenter_uuid is not None or current.vcenter_uuid is not None ) and current.vcenter_complex != self.vcenter_complex:
+        errors[ 'vcenter_complex' ] = 'can not move complexes without first destroying'
+
     if errors:
       raise ValidationError( errors )
 

@@ -69,7 +69,7 @@ class AzureComplex( Complex ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.pk and self.members.count() > 0:
+    if self.pk is not None and self.members.count() > 0:
       errors[ 'structure' ] = 'Azure Complex dosent have members'
 
     self.azure_resource_group = self.azure_resource_group.lower()
@@ -179,6 +179,18 @@ class AzureFoundation( Foundation ):
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
     return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
+
+  def clean( self, *args, **kwargs ):
+    super().clean( *args, **kwargs )
+    errors = {}
+
+    if self.pk is not None:
+      current = AzureFoundation.objects.get( pk=self.pk )
+      if ( self.azure_resource_name is not None or current.azure_resource_name is not None ) and current.azure_complex != self.azure_complex:
+        errors[ 'azure_complex' ] = 'can not move complexes without first destroying'
+
+    if errors:
+      raise ValidationError( errors )
 
   class Meta:
     default_permissions = ()

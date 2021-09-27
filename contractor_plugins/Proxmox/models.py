@@ -158,9 +158,21 @@ class ProxmoxFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
+    if self.pk is not None:
+      current = ProxmoxFoundation.objects.get( pk=self.pk )
+      if self.state != 'planned' and current.proxmox_complex != self.proxmox_complex:
+        errors[ 'proxmox_complex' ] = 'can not move complexes without first destroying'
+
     if not self.proxmox_vmid:
-      self.proxmox_vmid = random.randint( 100, 999999999 )  # found this by trial and error, thanks Mark
-      # TODO: make sure this randomally generated number isn't in use for this complex
+      for _ in range( 0, 100 ):
+        self.proxmox_vmid = random.randint( 100, 999999999 )  # found these bounds by trial and error, thanks Mark
+        try:
+          ProxmoxFoundation.objects.get( proxmox_complex=self.proxmox_complex, proxmox_vmid=self.proxmox_vmid )
+        except ProxmoxFoundation.DoesNotExist:
+          break
+
+      else:
+        errors[ 'proxmox_vmid' ] = 'Unable to find an aviable id'
 
     if self.proxmox_vmid < 100:
       errors[ 'proxmox_vmid' ] = 'Min value is 100'

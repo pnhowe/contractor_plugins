@@ -160,6 +160,11 @@ class PacketFoundation( Foundation ):
     super().clean( *args, **kwargs )
     errors = {}
 
+    if self.pk is not None:
+      current = PacketFoundation.objects.get( pk=self.pk )
+      if ( self.packet_uuid is not None or current.packet_uuid is not None ) and current.packet_complex != self.packet_complex:
+        errors[ 'packet_complex' ] = 'can not move complexes without first destroying'
+
     if errors:
       raise ValidationError( errors )
 
