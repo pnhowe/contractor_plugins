@@ -24,7 +24,7 @@ begin( description='Set RTC' )
   foundation.wait_for_poweroff()
 end
 
-dhcp.set_pxe( interface=structure.provisioning_interface, pxe='normal-boot' )
+dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='normal-boot' )
 """
 
 [ script.ipmi-destroy ]
@@ -39,7 +39,7 @@ begin( description='Wipe Disks' )
   foundation.wait_for_poweroff()
 end
 
-dhcp.set_pxe( interface=structure.provisioning_interface, pxe='normal-boot' )
+dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='normal-boot' )
 """
 
 [ script.ipmi-wipe ]
@@ -56,7 +56,7 @@ end
 
 # other hardware wipe?
 
-dhcp.set_pxe( interface=structure.provisioning_interface, pxe='normal-boot' )
+dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='normal-boot' )
 """
 
 
