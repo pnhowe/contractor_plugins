@@ -256,45 +256,6 @@ class wait_for_poweroff( ExternalFunction ):
     self.current_state = state[3]
 
 
-class device_state( ExternalFunction ):
-  def __init__( self, foundation, *args, **kwargs ):
-    super().__init__( *args, **kwargs )
-    self.uuid = foundation.packet_uuid
-    self.description = foundation.locator
-    self.connection_paramaters = foundation.packet_complex.connection_paramaters
-    self.state = None
-
-  @property
-  def done( self ):
-    return self.state is not None
-
-  @property
-  def message( self ):
-    if self.state is None:
-        return 'Retrieving for Device State'
-
-    return 'Device State at "{0}"'.format( self.state )
-
-  @property
-  def value( self ):
-    return self.state
-
-  def toSubcontractor( self ):
-    return ( 'device_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'description': self.description } )
-
-  def fromSubcontractor( self, data ):
-    self.state = data[ 'state' ]
-
-  def __getstate__( self ):
-    return ( self.connection_paramaters, self.uuid, self.description, self.state )
-
-  def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
-    self.uuid = state[1]
-    self.description = state[2]
-    self.state = state[3]
-
-
 class sync_networking_info( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
