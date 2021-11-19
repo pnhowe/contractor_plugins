@@ -322,7 +322,7 @@ class sync_networking_info( ExternalFunction ):
         address.full_clean()
         address.save()
 
-      self._done = True
+    self._done = True
 
   def toSubcontractor( self ):
     if self.interface_map is not None:
