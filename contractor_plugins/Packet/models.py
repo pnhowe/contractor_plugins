@@ -130,6 +130,10 @@ class PacketFoundation( Foundation ):
     return result
 
   @property
+  def console( self ):
+    return 'ttyS1'  # for arm ttyAMA0
+
+  @property
   def subclass( self ):
     return self
 
