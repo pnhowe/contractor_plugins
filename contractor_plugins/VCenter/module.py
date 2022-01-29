@@ -155,7 +155,14 @@ class create( ExternalFunction ):
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
       interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name, 'type': interface_type } )
 
-    self.vm_paramaters[ 'disk_list' ] = [ { 'size': vm_spec.get( 'disk_size', 10 ), 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in GiB, see _createDisk in subcontractor_plugsin/vcenter/lib.py
+    try:
+      disk_size = int( vm_spec.get( 'disk_size', 10 ) )
+    except ( ValueError, TypeError ):
+      raise ParamaterError( 'vm_spec.disk_size', 'must be number' )
+    if disk_size > 10240 or disk_size < 2:  # in GiB
+      raise ParamaterError( 'memory_size', 'must be from 2 to 10240' )  # is 10 TiB enough?
+
+    self.vm_paramaters[ 'disk_list' ] = [ { 'size': disk_size, 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in GiB, see _createDisk in subcontractor_plugsin/vcenter/lib.py
     self.vm_paramaters[ 'interface_list' ] = interface_list
     self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
 

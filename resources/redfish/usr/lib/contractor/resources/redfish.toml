@@ -14,9 +14,11 @@ sflinks = [ [ 'linux-base', 'redfish-base' ], [ 'manual-structure-base', 'redfis
 foundation.wait_for_poweroff()
 
 begin( description='Set RTC' )
+  signaling.reset( pxe_name='set-rtc' )
   dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='set-rtc' )
   foundation.power_on()
   delay( seconds=60 )
+  signaling.wait_for_completion()
   foundation.wait_for_poweroff()
 end
 
@@ -29,9 +31,11 @@ dhcp.set_pxe( interface=structure.provisioning_interface, pxe='normal-boot' )
 foundation.power_off()
 
 begin( description='Wipe Disks' )
+  signaling.reset( pxe_name='disk-wipe' )
   dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='disk-wipe' )
   foundation.power_on()
   delay( seconds=60 )
+  signaling.wait_for_completion()
   foundation.wait_for_poweroff()
 end
 

@@ -1,3 +1,9 @@
+contractor-plugins (0.13.0-1) focal; urgency=medium
+
+  * Job messageing script updates
+
+ -- Peter Howe <pnhowe@gmail.com>  Fri, 28 Jan 2022 21:48:56 -0700
+
 contractor-plugins (0.12.3-1) focal; urgency=medium
 
   * Packet Tweeks
