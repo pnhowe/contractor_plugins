@@ -19,6 +19,9 @@ begin( description='Device Creation', expected_time=10:00 )
   foundation.packet_uuid = device_uuid
   foundation.sync_networking_info()
   # foundation.wait_for_poweroff() right now packet dosen't support polling for power status that the API did not cause
+  # so hard power it off
+  delay( seconds=30 )
+  foundation.power_off()
 end
 
 :done
