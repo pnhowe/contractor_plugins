@@ -1,3 +1,5 @@
+import json
+
 from contractor.tscript.runner import ExternalFunction, ParamaterError
 from contractor.lib.config import getConfig
 
@@ -42,12 +44,12 @@ def _interface( attribute_list, config ):
 def _dhcp_relay( foundation, config ):
   result = []
   result.append( ( 'set', [ 'service', 'dhcp-relay', 'server', config[ 'vyos_dhcp_relay_server' ] ] ) )
-  for interface in foundation.interface_list:
-      result.append( ( 'set', [ 'service', 'dhcp-relay', 'interface', interface.name ] ) )
+  for interface in foundation.getInterfaceList():
+      result.append( ( 'set', [ 'service', 'dhcp-relay', 'interface', interface[ 'name' ] ] ) )
 
-  param_map = {}
-  param_map[ 'server' ] = config[ 'vyos_dhcp_relay_server' ]
-  param_map[ 'interface_list' ] = '  \n'.join( [ 'interface {0}'.format( i.name ) for i in foundation.interface_list ] )
+  # param_map = {}
+  # param_map[ 'server' ] = config[ 'vyos_dhcp_relay_server' ]
+  # param_map[ 'interface_list' ] = '  \n'.join( [ 'interface {0}'.format( i.name ) for i in foundation.getInterfaceList() ] )
 
   return result
 
@@ -89,7 +91,7 @@ class apply( ExternalFunction ):
 
   @property
   def value( self ):
-    if self.error:
+    if self.error is not None:
       return Exception( 'Error appling config: "{0}"'.format( self.error ) )
     else:
       return True
@@ -110,14 +112,14 @@ class apply( ExternalFunction ):
     try:
       auth_key = parms[ 'auth_key' ]
     except KeyError:
-      raise ParamaterError( 'attribute', 'required' )
+      raise ParamaterError( 'auth_key', 'required' )
 
     self.command_list = _buildCommandList( attribute, foundation, structure )
-    self.host = structure.primary_ip
+    self.host = structure.primary_address.ip_address
     self.auth_key = auth_key
 
   def toSubcontractor( self ):
-    return ( 'apply', { 'host': self.host, 'auth_key': self.auth_key, 'command_list': self.command_list } )
+    return ( 'apply', { 'host': self.host, 'auth_key': self.auth_key, 'command_list': json.dumps( self.command_list ) } )
 
   def fromSubcontractor( self, data ):
     self.error = data[ 'error' ]
