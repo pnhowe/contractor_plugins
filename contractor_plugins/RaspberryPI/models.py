@@ -33,11 +33,10 @@ class RaspberryPiFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super().checkAuth( user, method, id_list, action )
 
   class Meta:
-    pass
-    # default_permissions = ( 'add', 'change', 'delete', 'view' )
+    default_permissions = ()
 
   def __str__( self ):
     return 'RaspberryPiFoundation {0}'.format( self.pk )
