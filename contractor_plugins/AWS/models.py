@@ -77,7 +77,7 @@ class AWSEC2Foundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return super.checkAuth( user, method, id_list, action )
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   class Meta:
     pass

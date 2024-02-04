@@ -59,7 +59,7 @@ class ProxmoxComplex( Complex ):  # NOTE: will use the first member as the Host 
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return super().checkAuth( user, method, id_list, action )
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -150,7 +150,7 @@ class ProxmoxFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return super().checkAuth( user, method, id_list, action )
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
