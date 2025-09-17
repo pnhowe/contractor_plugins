@@ -151,7 +151,7 @@ class wait_for_poweroff( ExternalFunction ):
 
 # plugin exports
 
-TSCRIPT_NAME = 'ipmi'
+TSCRIPT_NAME = 'redfish'
 
 TSCRIPT_FUNCTIONS = {
                     }

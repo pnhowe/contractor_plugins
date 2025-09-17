@@ -1,3 +1,5 @@
+import json
+
 from contractor.tscript.runner import ExternalFunction, ParamaterError
 from contractor.lib.config import getConfig
 
@@ -89,7 +91,7 @@ class apply( ExternalFunction ):
 
   @property
   def value( self ):
-    if self.error:
+    if self.error is not None:
       return Exception( 'Error appling config: "{0}"'.format( self.error ) )
     else:
       return True
@@ -110,14 +112,14 @@ class apply( ExternalFunction ):
     try:
       auth_key = parms[ 'auth_key' ]
     except KeyError:
-      raise ParamaterError( 'attribute', 'required' )
+      raise ParamaterError( 'auth_key', 'required' )
 
     self.command_list = _buildCommandList( attribute, foundation, structure )
-    self.host = structure.primary_ip
+    self.host = structure.primary_ip.ip_address
     self.auth_key = auth_key
 
   def toSubcontractor( self ):
-    return ( 'apply', { 'host': self.host, 'auth_key': self.auth_key, 'command_list': self.command_list } )
+    return ( 'apply', { 'host': self.host, 'auth_key': self.auth_key, 'command_list': json.dumps( self.command_list ) } )
 
   def fromSubcontractor( self, data ):
     self.error = data[ 'error' ]
