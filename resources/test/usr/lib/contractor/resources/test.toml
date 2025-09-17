@@ -1,0 +1,76 @@
+sflinks = [ [ 'test-structure-base', 'test-foundation-base' ], ]
+
+[ structure.test-structure-base ]
+  description = 'Base Test Structure'
+  scripts = { 'create' = 'test-structure-create', 'destroy' = 'test-structure-destroy' }
+
+[ foundation.test-foundation-base ]
+  description = 'Base Test Server'
+  scripts = { 'create' = 'test-foundation-create', 'destroy' = 'test-foundation-destroy' }
+  foundation_types = [ 'Test', 'TestComplex' ]
+  config_values = {}
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+
+
+[ script.test-structure-create ]
+  description='Install Test OS'
+  script = """# Install Test OS
+begin( description='Install Test OS', expected_time=3:00 )
+
+  begin( description='Install OS', expected_time=02:00 )
+    foundation.power_on()
+    delay( minutes=1 )
+    foundation.wait_for_poweroff()
+  end
+
+  begin( description='Power Up', expected_time=1:00 )
+    foundation.power_on()
+  end
+
+end
+"""
+
+[ script.test-structure-destroy ]
+  description='Uninstall Test OS'
+  script = """# Uninstall Test OS
+begin( description='Power Off', expected_time=1:00  )
+  foundation.power_off()
+end
+"""
+
+[ script.test-foundation-create ]
+  description = 'Create Test Server'
+  script = """# Test and Configure a Test Server
+begin( description='Test and Configure a Test Server', expected_time=5:00 )
+
+  begin( description='Configurate Hardware', expected_time=2:00  )
+    foundation.power_on()
+    delay( minutes=1 )
+    foundation.wait_for_poweroff()
+  end
+
+  begin( description='Test Hardware', expected_time=2:00  )
+    foundation.power_on()
+    delay( minutes=1 )
+    foundation.wait_for_poweroff()
+  end
+
+  begin( description='Verify Hardware State', expected_time=2:00  )
+    foundation.power_on()
+    delay( minutes=1 )
+    foundation.wait_for_poweroff()
+  end
+
+end
+"""
+
+[ script.test-foundation-destroy ]
+  description = 'Destroy Test Server'
+  script = """# Decommission Test Server
+begin( description='Wipe Disks', expected_time=2:00  )
+  foundation.power_on()
+  delay( minutes=1 )
+  foundation.wait_for_poweroff()
+end
+"""

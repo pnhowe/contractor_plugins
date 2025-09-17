@@ -88,6 +88,9 @@ class VirtualBoxComplex( Complex ):
 def _vmSpec( foundation ):
   result = {}
 
+  if foundation.structure is None:
+    raise ValueError( 'No Structure Attached' )
+
   structure_config = getConfig( foundation.structure )
   structure_config = mergeValues( structure_config )
 

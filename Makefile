@@ -1,16 +1,14 @@
 VERSION := $(shell head -n 1 debian/changelog | awk '{match( $$0, /\(.+?\)/); print substr( $$0, RSTART+1, RLENGTH-2 ) }' | cut -d- -f1 )
 
 all:
-	./setup.py build
 
 install:
-	./setup.py install --root=$(DESTDIR) --install-purelib=/usr/lib/python3/dist-packages/ --prefix=/usr --no-compile -O0
+	pip3 install . --target="$(DESTDIR)/usr/lib/python3/dist-packages" --no-deps --no-compile --no-build-isolation
 
 version:
 	echo $(VERSION)
 
 clean:
-	./setup.py clean || true
 	$(RM) -r build
 	$(RM) dpkg
 	$(RM) -r htmlcov
@@ -51,12 +49,11 @@ respkg:
 	cd resources && fakeroot respkg -b ../contractor-plugins-amt_$(VERSION).respkg        -n contractor-plugins-amt        -e $(VERSION) -c "Contractor Plugins - AMT"        -t load_amt.sh        -d amt        -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-docker_$(VERSION).respkg     -n contractor-plugins-docker     -e $(VERSION) -c "Contractor Plugins - Docker"     -t load_docker.sh     -d docker     -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-manual_$(VERSION).respkg     -n contractor-plugins-manual     -e $(VERSION) -c "Contractor Plugins - Manual"     -t load_manual.sh     -d manual     -s contractor-os-base
-	cd resources && fakeroot respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - VCenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
-	cd resources && fakeroot respkg -b ../contractor-plugins-proxmox_$(VERSION).respkg    -n contractor-plugins-proxmox    -e $(VERSION) -c "Contractor Plugins - Proxmox"    -t load_proxmox.sh    -d proxmox    -s contractor-os-base
+#	cd resources && fakeroot respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - VCenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-virtualbox_$(VERSION).respkg -n contractor-plugins-virtualbox -e $(VERSION) -c "Contractor Plugins - VirtualBox" -t load_virtualbox.sh -d virtualbox -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-libvirt_$(VERSION).respkg    -n contractor-plugins-libvirt    -e $(VERSION) -c "Contractor Plugins - LibVirt"    -t load_libvirt.sh    -d libvirt    -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-azure_$(VERSION).respkg      -n contractor-plugins-azure      -e $(VERSION) -c "Contractor Plugins - Azure"      -t load_azure.sh      -d azure      -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-aws_$(VERSION).respkg        -n contractor-plugins-aws        -e $(VERSION) -c "Contractor Plugins - AWS"        -t load_aws.sh        -d aws        -s contractor-os-base
-	cd resources && fakeroot respkg -b ../contractor-plugins-packet_$(VERSION).respkg     -n contractor-plugins-packet     -e $(VERSION) -c "Contractor Plugins - Packet"     -t load_packet.sh     -d packet     -s contractor-os-base
 
 	cd resources && fakeroot respkg -b ../contractor-plugins-iputils_$(VERSION).respkg    -n contractor-plugins-ipuils     -e $(VERSION) -c "Contractor Plugins - IpUtils"    -t load_iputils.sh    -d iputils
 

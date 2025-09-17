@@ -19,11 +19,12 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.RedFish.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class RedFishFoundation( Foundation ):  # , Networked ):
+  SOL_PORT_CHOICES = ( 'console', 'ttyS0', 'ttyS1', 'ttyS2', 'ttyS3' )
   redfish_username = models.CharField( max_length=16 )
   redfish_password = models.CharField( max_length=16 )
   # redfish_interface = models.ForeignKey( RealNetworkInterface )
   redfish_ip_address = models.CharField( max_length=30 )
-  redfish_sol_port = models.CharField( max_length=7, choices=( ( 'console', 'console' ), ( 'ttyS0', 'ttyS0' ), ( 'ttyS1', 'ttyS1' ), ( 'ttyS2', 'ttyS2' ), ( 'ttyS3', 'ttyS3' ) ), default='ttyS1' )
+  redfish_sol_port = models.CharField( max_length=7, choices=[ ( i, i ) for i in SOL_PORT_CHOICES ], default='ttyS1' )
   plot = models.ForeignKey( Plot, on_delete=models.PROTECT )
 
   @staticmethod
@@ -99,6 +100,9 @@ class RedFishFoundation( Foundation ):  # , Networked ):
     errors = {}
 
     if errors:
+      if self.port not in RedFishFoundation.SOL_PORT_CHOICES:
+        errors[ 'port' ] = 'Invalid'
+
       raise ValidationError( errors )
 
   class Meta:

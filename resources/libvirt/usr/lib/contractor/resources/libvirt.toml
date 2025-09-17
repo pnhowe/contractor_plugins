@@ -1,0 +1,32 @@
+sflinks = [ [ 'linux-base', 'libvirt-vm-base' ], [ 'manual-structure-base', 'libvirt-vm-base' ]  ]
+
+[ foundation.libvirt-vm-base ]
+  description = 'Base LibVirt VM'
+  scripts = { 'create' = 'libvirt-vm-create', 'destroy' = 'libvirt-vm-destroy' }
+  foundation_types = [ 'LibVirt' ]
+  config_values = { 'memory_size' = 512, 'cpu_count' = 1, libvirt_guest_type = 'Other' }
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+
+[ script.libvirt-vm-create ]
+  description = 'Create LibVirt VM'
+  script = """# Create LibVirt VM
+vm_spec = foundation.libvirt_vmspec
+
+begin( description='VM Creation' )
+  vm_uuid = libvirt.create( vm_spec=vm_spec )
+  foundation.libvirt_uuid = vm_uuid
+  interface_map = foundation.get_interface_map()
+  foundation.set_interface_macs( interface_map=interface_map )
+end
+  """
+
+[ script.libvirt-vm-destroy ]
+  description = 'Destroy LibVirt VM'
+  script = """# Destory LibVirt VM
+begin( description='VM Destruction' )
+  foundation.power_off()
+  foundation.destroy()
+  foundation.libvirt_uuid = None
+end
+  """

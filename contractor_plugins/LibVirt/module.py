@@ -12,20 +12,32 @@ MAX_POWER_SET_ATTEMPTS = 5
 class create( ExternalFunction ):
   def __init__( self, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.complete = None
+    self.uuid = None
+    self.in_rollback = False
     self.connection_paramaters = {}
     self.vm_paramaters = {}
 
   @property
   def done( self ):
-    return self.complete is True
+    return self.uuid is not None
 
   @property
   def message( self ):
-    if self.complete is True:
-      return 'VM Created'
+    if self.uuid is not None:
+      if self.in_rollback:
+        return 'VM Rolled Back'
+      else:
+        return 'VM Created'
+
     else:
-      return 'Waiting for VM Creation'
+      if self.in_rollback:
+        return 'Waiting for VM Rollback'
+      else:
+        return 'Waiting for VM Creation'
+
+  @property
+  def value( self ):
+    return self.uuid
 
   def setup( self, parms ):
     try:
@@ -34,21 +46,11 @@ class create( ExternalFunction ):
       raise ParamaterError( '<internal>', 'Unable to get Foundation: {0}'.format( e ) )
 
     try:
-      proxmox_complex = self.getScriptValue( 'foundation', 'proxmox_complex' )
+      libvirt_complex = self.getScriptValue( 'foundation', 'libvirt_complex' )
     except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation proxmox_complex: {0}'.format( e ) )
+      raise ParamaterError( '<internal>', 'Unable to get Foundation libvirt_complex: {0}'.format( e ) )
 
-    self.connection_paramaters = proxmox_complex.connection_paramaters
-
-    self.vm_paramaters = { 'vmid': foundation.proxmox_vmid }
-
-    try:
-      self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
-    except KeyError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
-
-    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
+    self.connection_paramaters = libvirt_complex.connection_paramaters
 
     try:
       vm_spec = parms[ 'vm_spec' ]
@@ -58,13 +60,21 @@ class create( ExternalFunction ):
     if not isinstance( vm_spec, dict ):
       raise ParamaterError( 'vm_spec', 'must be a dict' )
 
-    for key in ( 'node', ):
-      try:
-        self.vm_paramaters[ key ] = parms[ key ]
-      except KeyError:
-        raise ParamaterError( key, 'required' )
+    interface_list = []
+    for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
+      interface_list.append( { 'name': interface.name, 'network': interface.network.name } )
 
-    for key in ( 'core_count', 'memory_size' ):  # , 'swap_size' ): for lxc
+    self.vm_paramaters = {  # the defaults
+                           'disk_list': [ { 'name': 'sda', 'size': 10 } ],  # disk size in GiB, disk name mush match NAME_REGEX
+                           'interface_list': interface_list,
+                           'boot_order': [ 'network', 'hd' ]  # list of "fd", "hd", "cdrom", "network"
+                         }
+
+    if False:  # boot from iso instead
+      self.vm_paramaters[ 'disk_list' ].append( { 'name': 'cd', 'file': '/home/peter/Downloads/ubuntu-16.04.2-server-amd64.iso' } )
+      self.vm_paramaters[ 'boot_order' ][0] = 'cdrom'
+
+    for key in ( 'cpu_count', 'memory_size' ):
       try:
         self.vm_paramaters[ key ] = int( vm_spec[ key ] )
       except KeyError:
@@ -72,115 +82,63 @@ class create( ExternalFunction ):
       except ( ValueError, TypeError ):
         raise ParamaterError( 'vm_spec.{0}'.format( key ), 'must be an integer' )
 
-    if self.vm_paramaters[ 'core_count' ] > 64 or self.vm_paramaters[ 'core_count' ] < 1:
-      raise ParamaterError( 'core_count', 'must be from 1 to 64')
+    if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
+      raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
     if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MiB
       raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
-    # if self.vm_paramaters[ 'swap_size' ] > 1048510 or self.vm_paramaters[ 'swap_size' ] < 512:  # in MiB  for lxc
-    #   raise ParamaterError( 'swap_size', 'must be from 512 to 1048510' )
 
-    for key in ( 'proxmox_ostype', ):
+    try:
+      self.vm_paramaters[ 'name' ] = self.getScriptValue( 'foundation', 'locator' )
+    except KeyError as e:
+      raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
+
+    if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
+      raise ParamaterError( '<internal>', 'invalid vm name' )
+
+    for key in ( 'libvirt_domain_type', ):
       try:
         self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
       except KeyError:
         pass
 
-    interface_type = 'virtio'
-    interface_list = []
-    for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
-      interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name, 'type': interface_type } )
-
-    self.vm_paramaters[ 'disk_list' ] = [ { 'size': vm_spec.get( 'disk_size', 10 ), 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thick' ) } ]  # disk size in GiB
-    self.vm_paramaters[ 'interface_list' ] = interface_list
-    self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd'
-
   def toSubcontractor( self ):
-    return ( 'create', { 'connection': self.connection_paramaters, 'vm': self.vm_paramaters } )
+    print( f'to subcontractor Rollback "{self.in_rollback}"')
+    if self.in_rollback:
+      return ( 'create_rollback', { 'connection': self.connection_paramaters, 'vm': self.vm_paramaters } )
+    else:
+      return ( 'create', { 'connection': self.connection_paramaters, 'vm': self.vm_paramaters } )
 
   def fromSubcontractor( self, data ):
-    self.complete = True
+    print( f'from subcontractor Rollback "{self.in_rollback}"')
+    if self.in_rollback:
+      self.in_rollback = not data.get( 'rollback_done', False )
+      print( f'to subcontractor Rollback is now "{self.in_rollback}"')
+    else:
+      self.uuid = data.get( 'uuid', None )
+
+  def rollback( self ):
+    if self.uuid is not None:
+      raise ValueError( 'Unable to Rollback after vm has been created' )
+
+    self.in_rollback = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.vm_paramaters, self.complete )
+    return ( self.connection_paramaters, self.vm_paramaters, self.in_rollback, self.uuid )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.vm_paramaters = state[1]
-    self.complete = state[2]
+    self.in_rollback = state[2]
+    self.uuid = state[3]
 
 
-class node_list( ExternalFunction ):
-  def __init__( self, *args, **kwargs ):
-    super().__init__( *args, **kwargs )
-    self.node_list = None
-    self.connection_paramaters = {}
-    self.min_memory = None
-    self.min_cores = None
-    self.scalers = { 'cpu': 4, 'memory': 4, 'io': 8, 'vm': 1 }  # must be integers
-
-  @property
-  def done( self ):
-    return self.node_list is not None
-
-  @property
-  def message( self ):
-    if self.node_list is not None:
-      return 'Node List Length: "{0}"'.format( len( self.node_list ) )
-    else:
-      return 'Waiting for Node List'
-
-  @property
-  def value( self ):
-    return self.node_list
-
-  def setup( self, parms ):
-    try:
-      proxmox_complex = self.getScriptValue( 'foundation', 'proxmox_complex' )
-    except ValueError as e:
-      raise ParamaterError( '<internal>', 'Unable to get Foundation proxmox_complex: {0}'.format( e ) )
-
-    self.connection_paramaters = proxmox_complex.connection_paramaters
-
-    for key in ( 'min_memory', 'min_cores' ):  # memory in MB
-      try:
-        setattr( self, key, int( parms[ key ] ) )
-      except KeyError:
-        raise ParamaterError( key, 'required' )
-      except ( ValueError, TypeError ):
-        raise ParamaterError( key, 'must be an integer' )
-
-    for name in ( 'cpu', 'memory', 'io', 'vm' ):  # each is turned into a value from 0 -> 1, 1 being most desireable, then * by the scaler and added up, and sorted
-      try:
-        self.scalers[ name ] = int( parms[ '{0}_scaler'.format( name ) ] )
-      except KeyError:
-        pass
-      except ( ValueError, TypeError ):
-        raise ParamaterError( '{0}_scaler'.format( name ), 'must be an integer' )
-
-  def toSubcontractor( self ):
-    return ( 'node_list', { 'connection': self.connection_paramaters, 'min_memory': self.min_memory, 'min_cores': self.min_cores, 'scalers': self.scalers } )
-
-  def fromSubcontractor( self, data ):
-    self.node_list = data[ 'node_list' ]
-
-  def __getstate__( self ):
-    return ( self.connection_paramaters, self.min_memory, self.min_cores, self.scalers, self.node_list )
-
-  def __setstate__( self, state ):
-    self.connection_paramaters = state[0]
-    self.min_memory = state[1]
-    self.min_cores = state[2]
-    self.scalers = state[3]
-    self.node_list = state[4]
-
-
-# other functions used by the proxmox foundation
+# other functions used by the libvirt foundation
 class destroy( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.vmid = foundation.proxmox_vmid
+    self.uuid = foundation.libvirt_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.proxmox_complex.connection_paramaters
+    self.connection_paramaters = foundation.libvirt_complex.connection_paramaters
     self.complete = None
 
   @property
@@ -195,27 +153,27 @@ class destroy( ExternalFunction ):
       return 'Waiting for VM Destruction'
 
   def toSubcontractor( self ):
-    return ( 'destroy', { 'connection': self.connection_paramaters, 'vmid': self.vmid, 'name': self.name } )
+    return ( 'destroy', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.complete = True
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.vmid, self.name, self.complete )
+    return ( self.connection_paramaters, self.complete, self.name, self.uuid )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
-    self.vmid = state[1]
+    self.complete = state[1]
     self.name = state[2]
-    self.complete = state[3]
+    self.uuid = state[3]
 
 
 class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
   def __init__( self, foundation, state, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.vmid = foundation.proxmox_vmid
+    self.uuid = foundation.libvirt_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.proxmox_complex.connection_paramaters
+    self.connection_paramaters = foundation.libvirt_complex.connection_paramaters
     self.desired_state = state
     self.curent_state = None
     self.counter = 0
@@ -239,19 +197,19 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
   def toSubcontractor( self ):
     self.counter += 1
     if self.desired_state == 'off' and self.counter < 3:  # the first two times, do it nicely, after that, the hard way
-      return ( 'set_power', { 'state': 'soft_off', 'connection': self.connection_paramaters, 'vmid': self.vmid, 'name': self.name } )
+      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': 'soft_off', 'uuid': self.uuid, 'name': self.name } )
     else:
-      return ( 'set_power', { 'state': self.desired_state, 'connection': self.connection_paramaters, 'vmid': self.vmid, 'name': self.name } )
+      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': self.desired_state, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.curent_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.vmid, self.name, self.desired_state, self.curent_state, self.counter )
+    return ( self.connection_paramaters, self.uuid, self.name, self.desired_state, self.curent_state, self.counter )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
-    self.vmid = state[1]
+    self.uuid = state[1]
     self.name = state[2]
     self.desired_state = state[3]
     self.curent_state = state[4]
@@ -261,9 +219,9 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
 class power_state( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.vmid = foundation.proxmox_vmid
+    self.uuid = foundation.libvirt_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.proxmox_complex.connection_paramaters
+    self.connection_paramaters = foundation.libvirt_complex.connection_paramaters
     self.state = None
 
   @property
@@ -282,17 +240,17 @@ class power_state( ExternalFunction ):
     return self.state
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'connection': self.connection_paramaters, 'vmid': self.vmid, 'name': self.name } )
+    return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.vmid, self.name, self.state )
+    return ( self.connection_paramaters, self.uuid, self.name, self.state )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
-    self.vmid = state[1]
+    self.uuid = state[1]
     self.name = state[2]
     self.state = state[3]
 
@@ -300,9 +258,9 @@ class power_state( ExternalFunction ):
 class wait_for_poweroff( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
-    self.vmid = foundation.proxmox_vmid
+    self.uuid = foundation.libvirt_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.proxmox_complex.connection_paramaters
+    self.connection_paramaters = foundation.libvirt_complex.connection_paramaters
     self.current_state = None
 
   @property
@@ -314,17 +272,17 @@ class wait_for_poweroff( ExternalFunction ):
     return 'Waiting for Power off, curently "{0}"'.format( self.current_state )
 
   def toSubcontractor( self ):
-    return ( 'power_state', { 'connection': self.connection_paramaters, 'vmid': self.vmid, 'name': self.name } )
+    return ( 'power_state', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.current_state = data[ 'state' ]
 
   def __getstate__( self ):
-    return ( self.connection_paramaters, self.vmid, self.name, self.current_state )
+    return ( self.connection_paramaters, self.uuid, self.name, self.current_state )
 
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
-    self.vmid = state[1]
+    self.uuid = state[1]
     self.name = state[2]
     self.current_state = state[3]
 
@@ -333,9 +291,9 @@ class get_interface_map( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.foundation = foundation
-    self.vmid = foundation.proxmox_vmid
+    self.uuid = foundation.libvirt_uuid
     self.name = foundation.locator
-    self.connection_paramaters = foundation.proxmox_complex.connection_paramaters
+    self.connection_paramaters = foundation.libvirt_complex.connection_paramaters
     self.interface_list = None
 
   @property
@@ -345,7 +303,7 @@ class get_interface_map( ExternalFunction ):
   @property
   def message( self ):
     if self.interface_list is not None:
-      return 'Interface Map Length: "{0}"'.format( len( self.interface_list ) )
+      return 'Length of Interface Map: "{0}"'.format( len( self.interface_list ) )
     else:
       return 'Waiting for Interface Map'
 
@@ -363,18 +321,18 @@ class get_interface_map( ExternalFunction ):
     return result
 
   def toSubcontractor( self ):
-    return ( 'get_interface_map', { 'connection': self.connection_paramaters, 'vmid': self.vmid, 'name': self.name } )
+    return ( 'get_interface_map', { 'connection': self.connection_paramaters, 'uuid': self.uuid, 'name': self.name } )
 
   def fromSubcontractor( self, data ):
     self.interface_list = data[ 'interface_list' ]
 
   def __getstate__( self ):
-    return ( self.foundation, self.connection_paramaters, self.vmid, self.name, self.interface_list )
+    return ( self.foundation, self.connection_paramaters, self.uuid, self.name, self.interface_list )
 
   def __setstate__( self, state ):
     self.foundation = state[0]
     self.connection_paramaters = state[1]
-    self.vmid = state[2]
+    self.uuid = state[2]
     self.name = state[3]
     self.interface_list = state[4]
 
@@ -403,11 +361,10 @@ class set_interface_macs():
 
 # plugin exports
 
-TSCRIPT_NAME = 'proxmox'
+TSCRIPT_NAME = 'libvirt'
 
 TSCRIPT_FUNCTIONS = {
                       'create': create,
-                      'node_list': node_list
                     }
 
 TSCRIPT_VALUES = {

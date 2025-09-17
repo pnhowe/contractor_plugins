@@ -74,7 +74,7 @@ class create( ExternalFunction ):
       counter += 1
 
     self.vm_paramaters = {  # the defaults
-                           'disk_list': [ { 'name': 'sda', 'size': 10 } ],  # disk size in GiB
+                           'disk_list': [ { 'name': 'sda', 'size': 10 } ],  # disk size in GiB, disk name must match NAME_REGEX
                            'interface_list': interface_list,
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
@@ -102,7 +102,7 @@ class create( ExternalFunction ):
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
     if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
+      raise ParamaterError( '<internal>', 'invalid vm name' )
 
     for key in ( 'virtualbox_guest_type', ):
       try:

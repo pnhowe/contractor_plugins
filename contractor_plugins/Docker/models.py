@@ -184,7 +184,7 @@ class DockerPort( models.Model ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, verb, id_list, action=None ):
-    return cinp.basic_auth_check( user, verb, DockerPort )
+    return cinp.basic_auth_check( user, verb, action, DockerPort )
 
   def clean( self, *args, **kwargs ):  # TODO: do not allow port or address_offset to change, or find a way to make changes propagate
     super().clean( *args, **kwargs )
