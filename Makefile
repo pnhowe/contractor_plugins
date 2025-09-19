@@ -3,7 +3,7 @@ VERSION := $(shell head -n 1 debian/changelog | awk '{match( $$0, /\(.+?\)/); pr
 all:
 
 install:
-	pip3 install . --target="$(DESTDIR)/usr/lib/python3/dist-packages" --no-deps --no-compile --no-build-isolation
+	HOME=/tmp pip3 install . --target="$(DESTDIR)/usr/lib/python3/dist-packages" --no-deps --no-compile --no-build-isolation
 
 version:
 	echo $(VERSION)
@@ -14,6 +14,7 @@ clean:
 	$(RM) -r htmlcov
 	$(RM) *.respkg
 	$(RM) respkg
+	$(RM) -r contractor_plugins.egg-info
 	dh_clean || true
 	find -name *.pyc -delete
 	find -name __pycache__ -delete
@@ -24,7 +25,7 @@ dist-clean: clean
 .PHONY:: all install version clean dist-clean
 
 test-blueprints:
-	echo ubuntu-focal-base
+	echo ubuntu-noble-base
 
 test-requires:
 	echo flake8 python3-pytest python3-pytest-cov python3-pytest-django python3-pytest-mock
@@ -38,7 +39,7 @@ test:
 .PHONY:: test-blueprints test-requres test
 
 respkg-blueprints:
-	echo ubuntu-focal-base
+	echo ubuntu-noble-base
 
 respkg-requires:
 	echo respkg fakeroot
@@ -49,7 +50,7 @@ respkg:
 	cd resources && fakeroot respkg -b ../contractor-plugins-amt_$(VERSION).respkg        -n contractor-plugins-amt        -e $(VERSION) -c "Contractor Plugins - AMT"        -t load_amt.sh        -d amt        -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-docker_$(VERSION).respkg     -n contractor-plugins-docker     -e $(VERSION) -c "Contractor Plugins - Docker"     -t load_docker.sh     -d docker     -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-manual_$(VERSION).respkg     -n contractor-plugins-manual     -e $(VERSION) -c "Contractor Plugins - Manual"     -t load_manual.sh     -d manual     -s contractor-os-base
-#	cd resources && fakeroot respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - VCenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - VCenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-virtualbox_$(VERSION).respkg -n contractor-plugins-virtualbox -e $(VERSION) -c "Contractor Plugins - VirtualBox" -t load_virtualbox.sh -d virtualbox -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-libvirt_$(VERSION).respkg    -n contractor-plugins-libvirt    -e $(VERSION) -c "Contractor Plugins - LibVirt"    -t load_libvirt.sh    -d libvirt    -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-azure_$(VERSION).respkg      -n contractor-plugins-azure      -e $(VERSION) -c "Contractor Plugins - Azure"      -t load_azure.sh      -d azure      -s contractor-os-base
@@ -67,7 +68,7 @@ respkg-file:
 .PHONY:: respkg-blueprints respkg-requires respkg respkg-file
 
 dpkg-blueprints:
-	echo ubuntu-focal-base
+	echo ubuntu-noble-base
 
 dpkg-requires:
 	echo dpkg-dev debhelper python3-dev python3-setuptools dh-python
@@ -77,6 +78,6 @@ dpkg:
 	touch dpkg
 
 dpkg-file:
-	echo $(shell ls ../contractor-plugins_*.deb):focal
+	echo $(shell ls ../contractor-plugins_*.deb):noble
 
 .PHONY:: dpkg-blueprints dpkg-requires dpkg dpkg-file
