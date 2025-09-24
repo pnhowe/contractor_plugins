@@ -45,6 +45,7 @@ respkg-requires:
 	echo respkg fakeroot
 
 respkg:
+	cd resources && fakeroot respkg -b ../contractor-plugins-test_$(VERSION).respkg       -n contractor-plugins-test       -e $(VERSION) -c "Contractor Plugins - Test"       -t load_test.sh       -d test       -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-ipmi_$(VERSION).respkg       -n contractor-plugins-ipmi       -e $(VERSION) -c "Contractor Plugins - IPMI"       -t load_ipmi.sh       -d ipmi       -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-redfish_$(VERSION).respkg    -n contractor-plugins-redfish    -e $(VERSION) -c "Contractor Plugins - RedFish"    -t load_redfish.sh    -d redfish    -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-amt_$(VERSION).respkg        -n contractor-plugins-amt        -e $(VERSION) -c "Contractor Plugins - AMT"        -t load_amt.sh        -d amt        -s contractor-os-base
