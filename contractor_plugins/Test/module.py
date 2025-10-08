@@ -7,7 +7,7 @@ from contractor.tscript.runner import ExecutionError, UnrecoverableError, Extern
 def delay_amount( amount, variance ):
   if variance == 0:
     return amount
-  
+
   return int( random.triangular( amount - variance, amount + variance, amount ) )
 
 
@@ -29,7 +29,7 @@ class PowerOperation( ExternalFunction ):
 
   @property
   def done( self ):
-    return datetime.datetime.utcnow() >= self.end_at
+    return datetime.datetime.now( datetime.UTC ) >= self.end_at
 
   @property
   def value( self ):
@@ -37,7 +37,7 @@ class PowerOperation( ExternalFunction ):
 
   @property
   def message( self ):
-    return 'Running "{0}" for {1} more seconds'.format( self.operation, ( self.end_at - datetime.datetime.utcnow() ) )
+    return 'Running "{0}" for {1} more seconds'.format( self.operation, ( self.end_at - datetime.datetime.now( datetime.UTC ) ) )
 
   def setup( self, parms ):
     base_delay = 5  # for 'power_off' and 'power_state'
@@ -46,7 +46,7 @@ class PowerOperation( ExternalFunction ):
     elif self.operation == 'power_on':
       base_delay = 15
 
-    self.end_at = datetime.datetime.utcnow() + datetime.timedelta( seconds=delay_amount( base_delay, self.test_delay_variance ) )
+    self.end_at = datetime.datetime.now( datetime.UTC ) + datetime.timedelta( seconds=delay_amount( base_delay, self.test_delay_variance ) )
 
   def __getstate__( self ):
     return ( self.test_delay_variance, self.test_fail_likelihood, self.operation, self.end_at )

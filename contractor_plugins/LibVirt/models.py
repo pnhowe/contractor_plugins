@@ -84,7 +84,7 @@ def _vmSpec( foundation ):
   result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )  # in MiB
   result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )  # in GiB
 
-  result[ 'libvirt_domain_type' ] = structure_config.get( 'libvirt_domain_type', 'qemu' )
+  # result[ 'libvirt_domain_type' ] = structure_config.get( 'libvirt_domain_type', 'qemu' )
 
   return result
 
@@ -130,6 +130,10 @@ class LibVirtFoundation( Foundation ):
     result.update( { '_vlibvirt_complex': self.libvirt_complex.name } )
 
     return result
+
+  @property
+  def console( self ):
+    return 'ttyS0'
 
   @property
   def subclass( self ):

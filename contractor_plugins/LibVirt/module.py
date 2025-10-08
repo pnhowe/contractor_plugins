@@ -95,11 +95,11 @@ class create( ExternalFunction ):
     if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
       raise ParamaterError( '<internal>', 'invalid vm name' )
 
-    for key in ( 'libvirt_domain_type', ):
-      try:
-        self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
-      except KeyError:
-        pass
+    # for key in ( 'libvirt_domain_type', ):
+    #   try:
+    #     self.vm_paramaters[ key[ 8: ] ] = vm_spec[ key ]
+    #   except KeyError:
+    #     pass
 
   def toSubcontractor( self ):
     print( f'to subcontractor Rollback "{self.in_rollback}"')
