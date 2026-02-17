@@ -79,19 +79,19 @@ class AzureComplex( Complex ):
     self.azure_password = self.azure_password.lower()
     self.azure_tenant_id = self.azure_tenant_id.lower()
 
-    if not resource_group_regex.match( self.azure_resource_group ):
+    if self.azure_resource_group and not resource_group_regex.match( self.azure_resource_group ):
       errors[ 'azure_resource_group' ] = '"{0}" is invalid'.format( self.azure_resource_group )
 
-    if not uuid_regex.match( self.azure_subscription_id ):
+    if self.azure_subscription_id and not uuid_regex.match( self.azure_subscription_id ):
       errors[ 'azure_subscription_id' ] = '"{0}" is invalid'.format( self.azure_subscription_id )
 
-    if not uuid_regex.match( self.azure_client_id ):
+    if self.azure_client_id and not uuid_regex.match( self.azure_client_id ):
       errors[ 'azure_client_id' ] = '"{0}" is invalid'.format( self.azure_client_id )
 
-    if not uuid_regex.match( self.azure_password ):
+    if self.azure_password and not uuid_regex.match( self.azure_password ):
       errors[ 'azure_password' ] = '"{0}" is invalid'.format( self.azure_password )
 
-    if not uuid_regex.match( self.azure_tenant_id ):
+    if self.azure_tenant_id and not uuid_regex.match( self.azure_tenant_id ):
       errors[ 'azure_tenant_id' ] = '"{0}" is invalid'.format( self.azure_tenant_id )
 
     if errors:

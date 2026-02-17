@@ -18,8 +18,8 @@ class Migration(migrations.Migration):
             name='AMTFoundation',
             fields=[
                 ('foundation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='Building.Foundation')),
-                ('amt_username', models.CharField(default='admin', max_length=16)),
-                ('amt_password', models.CharField(max_length=16)),
+                ('amt_username', models.CharField(default='admin', max_length=50)),
+                ('amt_password', models.CharField(max_length=50)),
                 ('amt_ip_address', models.CharField(max_length=30)),
                 ('plot', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='Survey.Plot')),
             ],

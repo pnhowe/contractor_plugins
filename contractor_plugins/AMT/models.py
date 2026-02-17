@@ -19,8 +19,8 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.AMT.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class AMTFoundation( Foundation ):  # , Networked ):
-  amt_username = models.CharField( max_length=16, default='admin' )
-  amt_password = models.CharField( max_length=16 )
+  amt_username = models.CharField( max_length=50, default='admin' )
+  amt_password = models.CharField( max_length=50 )
   # amt_interface = models.ForeignKey( RealNetworkInterface )
   amt_ip_address = models.CharField( max_length=30 )
   plot = models.ForeignKey( Plot, on_delete=models.PROTECT )

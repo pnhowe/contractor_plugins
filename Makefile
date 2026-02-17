@@ -56,6 +56,7 @@ respkg:
 	cd resources && fakeroot respkg -b ../contractor-plugins-libvirt_$(VERSION).respkg    -n contractor-plugins-libvirt    -e $(VERSION) -c "Contractor Plugins - LibVirt"    -t load_libvirt.sh    -d libvirt    -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-azure_$(VERSION).respkg      -n contractor-plugins-azure      -e $(VERSION) -c "Contractor Plugins - Azure"      -t load_azure.sh      -d azure      -s contractor-os-base
 	cd resources && fakeroot respkg -b ../contractor-plugins-aws_$(VERSION).respkg        -n contractor-plugins-aws        -e $(VERSION) -c "Contractor Plugins - AWS"        -t load_aws.sh        -d aws        -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-proxmox_$(VERSION).respkg    -n contractor-plugins-proxmox    -e $(VERSION) -c "Contractor Plugins - Proxmox"    -t load_proxmox.sh    -d proxmox    -s contractor-os-base
 
 	cd resources && fakeroot respkg -b ../contractor-plugins-iputils_$(VERSION).respkg    -n contractor-plugins-ipuils     -e $(VERSION) -c "Contractor Plugins - IpUtils"    -t load_iputils.sh    -d iputils
 

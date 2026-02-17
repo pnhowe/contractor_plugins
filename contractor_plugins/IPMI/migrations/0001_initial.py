@@ -18,8 +18,8 @@ class Migration(migrations.Migration):
             name='IPMIFoundation',
             fields=[
                 ('foundation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='Building.Foundation')),
-                ('ipmi_username', models.CharField(max_length=16)),
-                ('ipmi_password', models.CharField(max_length=16)),
+                ('ipmi_username', models.CharField(max_length=50)),
+                ('ipmi_password', models.CharField(max_length=50)),
                 ('ipmi_ip_address', models.CharField(max_length=30)),
                 ('ipmi_sol_port', models.CharField(choices=[('console', 'console'), ('ttyS0', 'ttyS0'), ('ttyS1', 'ttyS1'), ('ttyS2', 'ttyS2'), ('ttyS3', 'ttyS3')], default='ttyS1', max_length=7)),
                 ('plot', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='Survey.Plot')),

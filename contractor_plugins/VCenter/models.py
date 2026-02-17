@@ -78,10 +78,10 @@ class VCenterComplex( Complex ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if not datacenter_name_regex.match( self.vcenter_datacenter ):
+    if self.vcenter_datacenter and not datacenter_name_regex.match( self.vcenter_datacenter ):
       errors[ 'vcenter_datacenter' ] = '"{0}" is invalid'.format( self.vcenter_datacenter )
 
-    if not cluster_name_regex.match( self.vcenter_cluster ):
+    if self.vcenter_cluster and not cluster_name_regex.match( self.vcenter_cluster ):
       errors[ 'vcenter_cluster' ] = '"{0}" is invalid'.format( self.vcenter_cluster )
 
     if errors:

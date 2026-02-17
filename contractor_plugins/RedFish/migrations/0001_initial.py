@@ -18,8 +18,8 @@ class Migration(migrations.Migration):
             name='RedFishFoundation',
             fields=[
                 ('foundation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='Building.Foundation')),
-                ('redfish_username', models.CharField(max_length=16)),
-                ('redfish_password', models.CharField(max_length=16)),
+                ('redfish_username', models.CharField(max_length=50)),
+                ('redfish_password', models.CharField(max_length=50)),
                 ('redfish_ip_address', models.CharField(max_length=30)),
                 ('redfish_sol_port', models.CharField(choices=[('console', 'console'), ('ttyS0', 'ttyS0'), ('ttyS1', 'ttyS1'), ('ttyS2', 'ttyS2'), ('ttyS3', 'ttyS3')], default='ttyS1', max_length=7)),
                 ('plot', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='Survey.Plot')),

@@ -127,13 +127,9 @@ class LibVirtFoundation( Foundation ):
   def configAttributes( self ):
     result = super().configAttributes()
     result.update( { '_libvirt_uuid': self.libvirt_uuid } )
-    result.update( { '_vlibvirt_complex': self.libvirt_complex.name } )
+    result.update( { '_libvirt_complex': self.libvirt_complex.name } )
 
     return result
-
-  @property
-  def console( self ):
-    return 'ttyS0'
 
   @property
   def subclass( self ):

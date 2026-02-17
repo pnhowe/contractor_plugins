@@ -1,0 +1,32 @@
+sflinks = [ [ 'linux-base', 'proxmox-vm-base' ], [ 'manual-structure-base', 'proxmox-vm-base' ]  ]
+
+[ foundation.proxmox-vm-base ]
+  description = 'Base Proxmox VM'
+  scripts = { 'create' = 'proxmox-vm-create', 'destroy' = 'proxmox-vm-destroy' }
+  foundation_types = [ 'Proxmox' ]
+  config_values = { 'memory_size' = 512, 'cpu_count' = 1 }
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+
+[ script.proxmox-vm-create ]
+  description = 'Create Proxmox VM'
+  script = """# Create Proxmox VM
+vm_spec = foundation.proxmox_vmspec
+
+begin( description='VM Creation' )
+  vm_id = proxmox.create( vm_spec=vm_spec )
+  foundation.proxmox_id = vm_id
+  interface_map = foundation.get_interface_map()
+  foundation.set_interface_macs( interface_map=interface_map )
+end
+"""
+
+[ script.proxmox-vm-destroy ]
+  description = 'Destroy Proxmox VM'
+  script = """# Destory Proxmox VM
+begin( description='VM Destruction' )
+  foundation.power_off()
+  foundation.destroy()
+  foundation.proxmox_id = None
+end
+"""
