@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause, ExecutionError
 
-NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
+NAME_REGEX = re.compile( r'^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
 
 
@@ -92,7 +92,7 @@ class create( ExternalFunction ):
 
     if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
       raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
-    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
+    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MiB
       raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
 
     # is this an OVA, if so, short cut, just deploy it
@@ -155,7 +155,14 @@ class create( ExternalFunction ):
     for interface in foundation.networkinterface_set.all().order_by( 'physical_location' ):
       interface_list.append( { 'name': interface.name, 'physical_location': interface.physical_location, 'network': interface.network.name, 'type': interface_type } )
 
-    self.vm_paramaters[ 'disk_list' ] = [ { 'size': vm_spec.get( 'disk_size', 10 ), 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in G, see _createDisk in subcontractor_plugsin/vcenter/lib.py
+    try:
+      disk_size = int( vm_spec.get( 'disk_size', 10 ) )
+    except ( ValueError, TypeError ):
+      raise ParamaterError( 'vm_spec.disk_size', 'must be number' )
+    if disk_size > 10240 or disk_size < 2:  # in GiB
+      raise ParamaterError( 'disk_size', 'must be from 2 to 10240' )  # is 10 TiB enough?
+
+    self.vm_paramaters[ 'disk_list' ] = [ { 'size': disk_size, 'name': 'sda', 'type': vm_spec.get( 'disk_provisioning', 'thin' ) } ]  # disk size in GiB, see _createDisk in subcontractor_plugsin/vcenter/lib.py
     self.vm_paramaters[ 'interface_list' ] = interface_list
     self.vm_paramaters[ 'boot_order' ] = [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
 
@@ -302,12 +309,12 @@ class create_datastore( ExternalFunction ):
 
     try:
       self.name = parms[ 'name' ]
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'name', 'required' )
 
     try:
       self.model = parms[ 'model' ]
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'model', 'required' )
 
   def toSubcontractor( self ):
@@ -366,7 +373,7 @@ class datastore_list( ExternalFunction ):
 
     try:
       self.host = parms.get( 'host' )
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'host', 'Required' )
 
     try:
@@ -415,7 +422,7 @@ class network_list( ExternalFunction ):
   @property
   def message( self ):
     if self.network_list is not None:
-      return 'Network List Length: "(0)"'.format( len( self.network_list ) )
+      return 'Network List Length: "{0}"'.format( len( self.network_list ) )
     else:
       return 'Waiting for Network List'
 
@@ -435,7 +442,7 @@ class network_list( ExternalFunction ):
 
     try:
       self.host = parms.get( 'host' )
-    except AttributeError as e:
+    except AttributeError:
       raise ParamaterError( 'host', 'Required' )
 
     self.name_regex = parms.get( 'name_regex', None )
@@ -577,8 +584,8 @@ class power_state( ExternalFunction ):
   def __setstate__( self, state ):
     self.connection_paramaters = state[0]
     self.uuid = state[1]
-    self.name = state[3]
-    self.state = state[2]
+    self.name = state[2]
+    self.state = state[3]
 
 
 class wait_for_poweroff( ExternalFunction ):

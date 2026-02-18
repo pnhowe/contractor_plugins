@@ -19,11 +19,11 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.AMT.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class AMTFoundation( Foundation ):  # , Networked ):
-  amt_username = models.CharField( max_length=16, default='admin' )
-  amt_password = models.CharField( max_length=16 )
+  amt_username = models.CharField( max_length=50, default='admin' )
+  amt_password = models.CharField( max_length=50 )
   # amt_interface = models.ForeignKey( RealNetworkInterface )
   amt_ip_address = models.CharField( max_length=30 )
-  plot = models.ForeignKey( Plot )
+  plot = models.ForeignKey( Plot, on_delete=models.PROTECT )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
@@ -84,7 +84,7 @@ class AMTFoundation( Foundation ):  # , Networked ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -92,6 +92,9 @@ class AMTFoundation( Foundation ):  # , Networked ):
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'AMTFoundation {0}'.format( self.pk )

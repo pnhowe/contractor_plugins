@@ -1,8 +1,8 @@
-sflinks = [ [ 'linux-base', 'ipmi-base' ] ]
+sflinks = [ [ 'linux-base', 'ipmi-base' ], [ 'manual-structure-base', 'ipmi-base' ] ]
 
 [ foundation.ipmi-base ]
-  description = 'Base IPMI VM'
-  scripts = { 'create' = 'ipmi-create', 'destroy' = 'ipmi-destroy' }
+  description = 'Base IPMI'
+  scripts = { 'create' = 'ipmi-create', 'destroy' = 'ipmi-destroy', 'wipe' = 'ipmi-wipe', 'firmware' = 'ipmi-firmware' }
   foundation_types = [ 'IPMI' ]
   config_values = {}
   template = {}
@@ -17,12 +17,34 @@ begin()
 end
 foundation.wait_for_poweroff()
 
+begin( description='Wipe Disks' )
+  signaling.reset( pxe_name='disk-wipe' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='disk-wipe' )
+  foundation.power_on()
+  delay( seconds=60 )
+  signaling.wait_for_completion()
+  foundation.wait_for_poweroff()
+end
+
 begin( description='Set RTC' )
+  signaling.reset( pxe_name='set-rtc' )
   dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='set-rtc' )
   foundation.power_on()
   delay( seconds=60 )
+  signaling.wait_for_completion()
   foundation.wait_for_poweroff()
 end
+
+begin( description='Update Firmware' )
+  signaling.reset( pxe_name='firmware' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='firmware' )
+  foundation.power_on()
+  delay( seconds=60 )
+  signaling.wait_for_completion()
+  foundation.wait_for_poweroff()
+end
+
+dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='normal-boot' )
 """
 
 [ script.ipmi-destroy ]
@@ -31,9 +53,49 @@ end
 foundation.power_off()
 
 begin( description='Wipe Disks' )
+  signaling.reset( pxe_name='disk-wipe' )
   dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='disk-wipe' )
   foundation.power_on()
   delay( seconds=60 )
+  signaling.wait_for_completion()
   foundation.wait_for_poweroff()
 end
+
+dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='normal-boot' )
+"""
+
+[ script.ipmi-wipe ]
+  description = 'Full IPMI Machine Wipe'
+  script = """# Fully Wipe the IPMI Machine
+foundation.wait_for_poweroff()
+
+begin( description='Full Disk Wipe' )
+  signaling.reset( pxe_name='disk-wipe' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='disk-wipe-single_pass' )
+  foundation.power_on()
+  delay( seconds=60 )
+  signaling.wait_for_completion()
+  foundation.wait_for_poweroff()
+end
+
+# other hardware wipe?
+
+dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='normal-boot' )
+"""
+
+[ script.ipmi-firmware ]
+  description = 'Firmware Check RedFish Server'
+  script = """# Firmware Check RedFish Server
+foundation.power_off()
+
+begin( description='Check Firmware' )
+  signaling.reset( pxe_name='firmware' )
+  dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='firmware' )
+  foundation.power_on()
+  delay( seconds=60 )
+  signaling.wait_for_completion()
+  foundation.wait_for_poweroff()
+end
+
+dhcp.set_pxe( interface=foundation.provisioning_interface, pxe='normal-boot' )
 """

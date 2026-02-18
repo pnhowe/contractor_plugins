@@ -9,7 +9,7 @@ class set_power( ExternalFunction ):
     self.complete = False
 
   def run( self ):
-    self.compete = True
+    self.complete = True
     raise Pause( 'Set Power of "{0}" to "{1}" then resume'.format( self.locator, self.state ) )
 
   @property
@@ -48,19 +48,19 @@ class wait_for_poweroff( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.locator = foundation.locator
-    self.compete = False
+    self.complete = False
 
   def run( self ):
-    self.compete = True
+    self.complete = True
     raise Pause( 'Wait for "{0}" to Power Off, then Resume'.format( self.locator ) )
 
   @property
   def done( self ):
-    return self.compete is True
+    return self.complete is True
 
   def __getstate__( self ):
-    return ( self.locator, self.compete )
+    return ( self.locator, self.complete )
 
   def __setstate__( self, state ):
     self.locator = state[0]
-    self.compete = state[1]
+    self.complete = state[1]

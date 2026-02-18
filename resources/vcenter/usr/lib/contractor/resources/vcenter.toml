@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'vcenter-vm-base' ] ]
+sflinks = [ [ 'linux-base', 'vcenter-vm-base' ], [ 'manual-structure-base', 'vcenter-vm-base' ]  ]
 
 [ foundation.vcenter-vm-base ]
   description = 'Base VCenter VM'
@@ -16,6 +16,11 @@ vm_spec = foundation.vcenter_vmspec
 
 begin( description='Locate Host' )
   host_list = vcenter.host_list( min_memory=vm_spec[ 'memory_size' ], min_cpu=vm_spec[ 'cpu_count' ] )
+  while len( array=host_list ) < 1 do
+  begin()
+    pause( msg='No Hosts with the required resources are aviable, resume to try again' )
+    host_list = vcenter.host_list( min_memory=vm_spec[ 'memory_size' ], min_cpu=vm_spec[ 'cpu_count' ] )
+  end
 end
 
 begin( description='Locate Datastore' )

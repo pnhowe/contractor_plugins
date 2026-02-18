@@ -7,7 +7,7 @@ echo "Got curent version of '$2'"
 echo "Got previsous version of '$3'"
 
 echo "Enabeling Docker plugin..."
-/usr/lib/contractor/util/pluginctl enable /usr/lib/python3/dist-packages/contractor_plugins/Docker
+/usr/lib/contractor/util/pluginctl --builder=DockerFoundation --builder=DockerComplex --builder=DockerPort --enable /usr/lib/python3/dist-packages/contractor_plugins/Docker
 
 echo "Loading Schema..."
 /usr/lib/contractor/util/manage.py migrate Docker

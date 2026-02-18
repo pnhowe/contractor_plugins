@@ -1,5 +1,4 @@
-
-sflinks = [ [ 'linux-base', 'azure-vm-base' ] ]
+sflinks = [ [ 'linux-base', 'azure-vm-base' ], [ 'manual-structure-base', 'azure-vm-base' ] ]
 
 [ foundation.azure-vm-base ]
   description = 'Base Azure VM'

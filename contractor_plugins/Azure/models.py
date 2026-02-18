@@ -18,8 +18,8 @@ FOUNDATION_SUBCLASS_LIST.append( 'azurefoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'azurecomplex' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.Azure.module' )
 
-uuid_regex = re.compile( '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' )
-resource_group_regex = re.compile( '^[-\w\._\(\)]+$' )  # from https://docs.microsoft.com/en-us/rest/api/resources/resourcegroups/createorupdate
+uuid_regex = re.compile( r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' )
+resource_group_regex = re.compile( r'^[-\w\._\(\)]+$' )  # from https://docs.microsoft.com/en-us/rest/api/resources/resourcegroups/createorupdate
 
 
 @cinp.model( property_list=( 'state', 'type' ) )
@@ -52,8 +52,8 @@ class AzureComplex( Complex ):
               'tenant_id': self.azure_tenant_id
             }
 
-  def newFoundation( self, hostname ):
-    foundation = AzureFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='azure-vm-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = AzureFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='azure-vm-base' ), locator=hostname )
     foundation.azure_complex = self
     foundation.full_clean()
     foundation.save()
@@ -63,13 +63,13 @@ class AzureComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.pk and self.members.count() > 0:
+    if self.pk is not None and self.members.count() > 0:
       errors[ 'structure' ] = 'Azure Complex dosent have members'
 
     self.azure_resource_group = self.azure_resource_group.lower()
@@ -79,23 +79,26 @@ class AzureComplex( Complex ):
     self.azure_password = self.azure_password.lower()
     self.azure_tenant_id = self.azure_tenant_id.lower()
 
-    if not resource_group_regex.match( self.azure_resource_group ):
+    if self.azure_resource_group and not resource_group_regex.match( self.azure_resource_group ):
       errors[ 'azure_resource_group' ] = '"{0}" is invalid'.format( self.azure_resource_group )
 
-    if not uuid_regex.match( self.azure_subscription_id ):
+    if self.azure_subscription_id and not uuid_regex.match( self.azure_subscription_id ):
       errors[ 'azure_subscription_id' ] = '"{0}" is invalid'.format( self.azure_subscription_id )
 
-    if not uuid_regex.match( self.azure_client_id ):
+    if self.azure_client_id and not uuid_regex.match( self.azure_client_id ):
       errors[ 'azure_client_id' ] = '"{0}" is invalid'.format( self.azure_client_id )
 
-    if not uuid_regex.match( self.azure_password ):
+    if self.azure_password and not uuid_regex.match( self.azure_password ):
       errors[ 'azure_password' ] = '"{0}" is invalid'.format( self.azure_password )
 
-    if not uuid_regex.match( self.azure_tenant_id ):
+    if self.azure_tenant_id and not uuid_regex.match( self.azure_tenant_id ):
       errors[ 'azure_tenant_id' ] = '"{0}" is invalid'.format( self.azure_tenant_id )
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'AzureComplex {0}'.format( self.pk )
@@ -103,6 +106,9 @@ class AzureComplex( Complex ):
 
 def _vmSpec( foundation ):
   result = {}
+
+  if foundation.structure is None:
+    raise ValueError( 'No Structure Attached' )
 
   structure_config = getConfig( foundation.structure )
   structure_config = mergeValues( structure_config )
@@ -175,7 +181,22 @@ class AzureFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
+
+  def clean( self, *args, **kwargs ):
+    super().clean( *args, **kwargs )
+    errors = {}
+
+    if self.pk is not None:
+      current = AzureFoundation.objects.get( pk=self.pk )
+      if ( self.azure_resource_name is not None or current.azure_resource_name is not None ) and current.azure_complex != self.azure_complex:
+        errors[ 'azure_complex' ] = 'can not move complexes without first destroying'
+
+    if errors:
+      raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'AzureFoundation {0}'.format( self.pk )

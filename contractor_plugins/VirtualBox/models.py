@@ -55,8 +55,8 @@ class VirtualBoxComplex( Complex ):
               'credentials': creds
             }
 
-  def newFoundation( self, hostname ):
-    foundation = VirtualBoxFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = VirtualBoxFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='virtualbox-vm-base' ), locator=hostname )
     foundation.virtualbox_complex = self
     foundation.full_clean()
     foundation.save()
@@ -66,17 +66,20 @@ class VirtualBoxComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.pk and self.members.count() > 1:
+    if self.pk is not None and self.members.count() > 1:
       errors[ 'structure' ] = 'VirtualBox Complex support only one structure'
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'VirtualBoxComplex {0}'.format( self.pk )
@@ -85,12 +88,15 @@ class VirtualBoxComplex( Complex ):
 def _vmSpec( foundation ):
   result = {}
 
+  if foundation.structure is None:
+    raise ValueError( 'No Structure Attached' )
+
   structure_config = getConfig( foundation.structure )
   structure_config = mergeValues( structure_config )
 
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
-  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
-  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )  # in MiB
+  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )  # in GiB
 
   result[ 'virtualbox_guest_type' ] = structure_config.get( 'virtualbox_guest_type', 'Other' )
 
@@ -169,17 +175,25 @@ class VirtualBoxFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
+
+    if self.pk is not None:
+      current = VirtualBoxFoundation.objects.get( pk=self.pk )
+      if ( self.virtualbox_uuid is not None or current.virtualbox_uuid is not None ) and current.virtualbox_complex != self.virtualbox_complex:
+        errors[ 'virtualbox_complex' ] = 'can not move complexes without first destroying'
 
     if self.site.pk != self.virtualbox_complex.site.pk:
       errors[ 'site' ] = 'Site must match the virtualbox_complex\'s site'
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'VirtualBoxFoundation {0}'.format( self.pk )

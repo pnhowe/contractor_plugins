@@ -1,0 +1,35 @@
+sflinks = [ [ 'linux-base', 'aws-instance-base' ], [ 'manual-structure-base', 'aws-instance-base' ] ]
+
+[ foundation.aws-instance-base ]
+  description = 'Generic AWS EC2 Instance'
+  scripts = { 'create' = 'aws-instance-create', 'destroy' = 'aws-instance-destroy' }
+  foundation_types = [ 'AWSEC2' ]
+  template = {}
+  physical_interface_names = [ 'eth0' ]
+[ foundation.aws-instance-base.config_values ]
+
+[ foundation.aws-instance-base ]
+  description = 'Generic AWS EC2 t2.micro Instance'
+[ foundation.aws-instance-base.config_values ]
+  awsec2_type = 't2.micro'
+
+[ script.aws-instance-create ]
+  description = 'Create AWS Instance'
+  script = """# Create Generic AWS EC2 Instance
+begin( description="Instance Creation" )
+  instance = aws.create()
+  foundation.awsec2_instance_id = instance[ 'instance_id' ]
+  foundation.set_interface_macs( interface_list=instance[ 'interface_list' ] )
+  foundation.set_ip_addresses( ip_address_map=instance[ 'ip_address_map' ] )
+end
+"""
+
+[ script.aws-instance-destroy ]
+  description = 'Destroy AWS Instance'
+  script = """# Destory Generic AWS EC2 Instance
+begin( description="Instance Destruction" )
+  foundation.power_off()
+  foundation.destroy()
+  foundation.awsec2_instance_id = None
+end
+"""

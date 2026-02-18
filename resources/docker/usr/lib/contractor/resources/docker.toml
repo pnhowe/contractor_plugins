@@ -1,4 +1,4 @@
-sflinks = [ [ 'linux-base', 'docker-container-base' ] ]
+sflinks = [ [ 'linux-base', 'docker-container-base' ], [ 'manual-structure-base', 'docker-container-base' ] ]
 
 [ foundation.docker-container-base ]
   description = 'Base Docker Container'

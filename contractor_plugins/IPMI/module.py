@@ -1,5 +1,4 @@
-
-from contractor.tscript.runner import ExternalFunction, Pause
+from contractor.tscript.runner import ExternalFunction, ExecutionError
 
 MAX_POWER_SET_ATTEMPTS = 5
 
@@ -47,8 +46,7 @@ class link_test( ExternalFunction ):
     self.score = state[5]
 
 
-# TODO: is power state == 'error', throw error
-class set_power( ExternalFunction ):  # TODO: need a delay after each power command, at least 5 seconds, last ones could possibly be longer
+class set_power( ExternalFunction ):
   def __init__( self, foundation, state, *args, **kwargs ):
     super().__init__( *args, **kwargs )
     self.connection_paramaters = foundation.connection_paramaters
@@ -58,7 +56,7 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
 
   def run( self ):
     if self.desired_state != self.curent_state and self.counter > MAX_POWER_SET_ATTEMPTS:
-      raise Pause( 'To Many Attempts to set power to "{0}", curently "{1}"'.format( self.desired_state, self.curent_state ) )
+      raise ExecutionError( 'To Many Attempts to set power to "{0}", curently "{1}"'.format( self.desired_state, self.curent_state ) )
 
   @property
   def done( self ):
@@ -75,7 +73,7 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
   def toSubcontractor( self ):
     self.counter += 1
     if self.desired_state == 'off' and self.counter < 3:  # the first two times, do it nicely, after that, the hard way
-      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': 'soft_off' } )
+      return ( 'set_power', { 'connection': self.connection_paramaters, 'state': 'shutdown' } )
     else:
       return ( 'set_power', { 'connection': self.connection_paramaters, 'state': self.desired_state } )
 
@@ -92,7 +90,6 @@ class set_power( ExternalFunction ):  # TODO: need a delay after each power comm
     self.counter = state[3]
 
 
-# TODO: is power state == 'error', throw error
 class power_state( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )
@@ -128,7 +125,6 @@ class power_state( ExternalFunction ):
     self.state = state[1]
 
 
-# TODO: is power state == 'error', throw error
 class wait_for_poweroff( ExternalFunction ):
   def __init__( self, foundation, *args, **kwargs ):
     super().__init__( *args, **kwargs )

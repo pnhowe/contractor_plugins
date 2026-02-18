@@ -18,13 +18,13 @@ FOUNDATION_SUBCLASS_LIST.append( 'vcenterfoundation' )
 COMPLEX_SUBCLASS_LIST.append( 'vcentercomplex' )
 RUNNER_MODULE_LIST.append( 'contractor_plugins.VCenter.module' )
 
-datacenter_name_regex = re.compile( '^[a-zA-Z0-9][a-zA-Z0-9_\-]*$' )
-cluster_name_regex = re.compile( '^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*$' )
+datacenter_name_regex = re.compile( r'^[a-zA-Z0-9][a-zA-Z0-9_\-]*$' )
+cluster_name_regex = re.compile( r'^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*$' )
 
 
 @cinp.model( property_list=( 'state', 'type' ) )
 class VCenterComplex( Complex ):
-  vcenter_host = models.ForeignKey( Structure, help_text='set to VCenter or the ESX host, if ESX host, leave members empty' )  # no need for unique, the same vcenter_host can be used for multiple clusters
+  vcenter_host = models.ForeignKey( Structure, on_delete=models.PROTECT, help_text='set to VCenter or the ESX host, if ESX host, leave members empty' )  # no need for unique, the same vcenter_host can be used for multiple clusters
   vcenter_username = models.CharField( max_length=50 )
   vcenter_password = models.CharField( max_length=50 )
   vcenter_datacenter = models.CharField( max_length=50, help_text='set to "ha-datacenter" for ESX hosts' )
@@ -61,8 +61,8 @@ class VCenterComplex( Complex ):
               'credentials': creds
             }
 
-  def newFoundation( self, hostname ):
-    foundation = VCenterFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = VCenterFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='vcenter-vm-base' ), locator=hostname )
     foundation.vcenter_complex = self
     foundation.full_clean()
     foundation.save()
@@ -72,20 +72,23 @@ class VCenterComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if not datacenter_name_regex.match( self.vcenter_datacenter ):
+    if self.vcenter_datacenter and not datacenter_name_regex.match( self.vcenter_datacenter ):
       errors[ 'vcenter_datacenter' ] = '"{0}" is invalid'.format( self.vcenter_datacenter )
 
-    if not cluster_name_regex.match( self.vcenter_cluster ):
+    if self.vcenter_cluster and not cluster_name_regex.match( self.vcenter_cluster ):
       errors[ 'vcenter_cluster' ] = '"{0}" is invalid'.format( self.vcenter_cluster )
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'VCenterComplex {0}'.format( self.pk )
@@ -94,12 +97,15 @@ class VCenterComplex( Complex ):
 def _vmSpec( foundation ):
   result = {}
 
+  if foundation.structure is None:
+    raise ValueError( 'No Structure Attached' )
+
   structure_config = getConfig( foundation.structure )
   structure_config = mergeValues( structure_config )
 
   result[ 'cpu_count' ] = structure_config.get( 'cpu_count', 1 )
-  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )
-  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )
+  result[ 'memory_size' ] = structure_config.get( 'memory_size', 1024 )  # in MiB
+  result[ 'disk_size' ] = structure_config.get( 'disk_size', 10 )  # in GiB
 
   if 'ova' in structure_config:
     result[ 'ova' ] = structure_config[ 'ova' ]
@@ -198,14 +204,22 @@ class VCenterFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
 
+    if self.pk is not None:
+      current = VCenterFoundation.objects.get( pk=self.pk )
+      if ( self.vcenter_uuid is not None or current.vcenter_uuid is not None ) and current.vcenter_complex != self.vcenter_complex:
+        errors[ 'vcenter_complex' ] = 'can not move complexes without first destroying'
+
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'VCenterFoundation {0}'.format( self.pk )

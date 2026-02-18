@@ -5,7 +5,7 @@ from contractor.tscript.runner import ExternalFunction, ParamaterError
 
 from contractor.Utilities.models import ipAddress2Native, Address
 
-NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
+NAME_REGEX = re.compile( r'^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 
 
 # exported functions

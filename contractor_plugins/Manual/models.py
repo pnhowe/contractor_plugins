@@ -26,8 +26,8 @@ class ManualComplex( Complex ):
   def type( self ):
     return 'Manual'
 
-  def newFoundation( self, hostname ):
-    foundation = ManualComplexedFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='manual-foundation-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = ManualComplexedFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='manual-foundation-base' ), locator=hostname )
     foundation.complex_host = self
     foundation.full_clean()
     foundation.save()
@@ -37,7 +37,7 @@ class ManualComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
@@ -45,6 +45,9 @@ class ManualComplex( Complex ):
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'ManualComplex {0}'.format( self.pk )
@@ -93,7 +96,10 @@ class ManualFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'ManualFoundation {0}'.format( self.pk )
@@ -133,7 +139,10 @@ class ManualComplexedFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'ManualComplexedFoundation {0}'.format( self.pk )

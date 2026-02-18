@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from contractor.tscript.runner import ExternalFunction, ParamaterError, Pause
 
-NAME_REGEX = re.compile( '^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
+NAME_REGEX = re.compile( r'^[a-zA-Z][a-zA-Z0-9\.\-_]*$' )
 MAX_POWER_SET_ATTEMPTS = 5
 
 INTERFACE_NAME_LIST = [ 'eth0', 'eth1', 'eth2', 'eth3' ]  # virtualbox does only 4 interfaces
@@ -74,7 +74,7 @@ class create( ExternalFunction ):
       counter += 1
 
     self.vm_paramaters = {  # the defaults
-                           'disk_list': [ { 'name': 'sda', 'size': 5 } ],  # disk size in G
+                           'disk_list': [ { 'name': 'sda', 'size': 10 } ],  # disk size in GiB, disk name must match NAME_REGEX
                            'interface_list': interface_list,
                            'boot_order': [ 'net', 'hdd' ]  # list of 'net', 'hdd', 'cd', 'usb'
                          }
@@ -93,7 +93,7 @@ class create( ExternalFunction ):
 
     if self.vm_paramaters[ 'cpu_count' ] > 64 or self.vm_paramaters[ 'cpu_count' ] < 1:
       raise ParamaterError( 'cpu_count', 'must be from 1 to 64')
-    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MB
+    if self.vm_paramaters[ 'memory_size' ] > 1048510 or self.vm_paramaters[ 'memory_size' ] < 512:  # in MiB
       raise ParamaterError( 'memory_size', 'must be from 512 to 1048510' )
 
     try:
@@ -102,7 +102,7 @@ class create( ExternalFunction ):
       raise ParamaterError( '<internal>', 'Unable to get Foundation Locator: {0}'.format( e ) )
 
     if not NAME_REGEX.match( self.vm_paramaters[ 'name' ] ):
-      raise ParamaterError( 'invalid name' )
+      raise ParamaterError( '<internal>', 'invalid vm name' )
 
     for key in ( 'virtualbox_guest_type', ):
       try:
@@ -359,6 +359,7 @@ class set_interface_macs():
         raise ParamaterError( 'interface_map', 'Error saving interface "{0}": {1}'.format( physical_location, e ) )
 
       iface.save()
+
 
 # plugin exports
 

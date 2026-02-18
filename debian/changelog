@@ -1,4 +1,51 @@
-contractor-plugins (0.8.0-1) bionic; urgency=medium
+contractor-plugins (0.14.1-1) noble; urgency=medium
+
+  * libvirt fixes
+  * test fixes
+
+ -- Peter Howe <pnhowe@gmail.com>  Wed, 08 Oct 2025 06:45:26 -0600
+
+contractor-plugins (0.14.0-1) noble; urgency=medium
+
+  * Adding libvirt
+  * Packaging updates 
+  * Added Testing module
+
+ -- Peter Howe <pnhowe@gmail.com>  Wed, 17 Sep 2025 11:53:28 -0600
+
+contractor-plugins (0.13.1-1) focal; urgency=medium
+
+  * Job messageing script updates
+
+ -- Peter Howe <pnhowe@gmail.com>  Fri, 28 Jan 2022 21:48:56 -0700
+
+contractor-plugins (0.12.3-1) focal; urgency=medium
+
+  * Packet Tweeks
+
+ -- Peter Howe <pnhowe@gmail.com>  Wed, 27 Oct 2021 11:20:45 -0600
+
+contractor-plugins (0.11.1-1) focal; urgency=medium
+
+  * IPMI Tweeks
+
+ -- Peter Howe <pnhowe@gmail.com>  Wed, 13 Oct 2021 07:58:52 -0600
+
+contractor-plugins (0.10.0-1) focal; urgency=medium
+
+  * Packet fixes
+
+ -- Peter Howe <pnhowe@gmail.com>  Mon, 13 Sep 2021 12:08:35 -0600
+
+contractor-plugins (0.9.0-1) focal; urgency=medium
+
+  * Updated to Focal
+  * Added packet
+  * fixes and updates
+
+ -- Peter Howe <pnhowe@gmail.com>  Thu, 02 Sep 2021 13:30:41 -0600
+
+contractor-plugins (0.8.0-1) focal; urgency=medium
 
   * Updated to Bionic
   * Goes with contractor 0.8.0

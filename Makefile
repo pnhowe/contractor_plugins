@@ -1,74 +1,85 @@
 VERSION := $(shell head -n 1 debian/changelog | awk '{match( $$0, /\(.+?\)/); print substr( $$0, RSTART+1, RLENGTH-2 ) }' | cut -d- -f1 )
 
 all:
-	./setup.py build
 
 install:
-	./setup.py install --root $(DESTDIR) --install-purelib=/usr/lib/python3/dist-packages/ --prefix=/usr --no-compile -O0
+	HOME=/tmp pip3 install . --target="$(DESTDIR)/usr/lib/python3/dist-packages" --no-deps --no-compile --no-build-isolation
 
 version:
 	echo $(VERSION)
 
 clean:
-	./setup.py clean || true
 	$(RM) -r build
 	$(RM) dpkg
 	$(RM) -r htmlcov
 	$(RM) *.respkg
 	$(RM) respkg
+	$(RM) -r contractor_plugins.egg-info
 	dh_clean || true
+	find -name *.pyc -delete
+	find -name __pycache__ -delete
+
 
 dist-clean: clean
 
 .PHONY:: all install version clean dist-clean
 
-test-distros:
-	echo ubuntu-xenial
+test-blueprints:
+	echo ubuntu-noble-base
 
 test-requires:
 	echo flake8 python3-pytest python3-pytest-cov python3-pytest-django python3-pytest-mock
 
 lint:
-	flake8 --ignore=E501,E201,E202,E111,E126,E114,E402,W605 --statistics --exclude=migrations .
+	flake8 --ignore=E501,E201,E202,E111,E126,E114,E402 --statistics --exclude=migrations .
 
 test:
 	py.test-3 -x --cov=contractor_plugins --cov-report html --cov-report term -vv contractor_plugins
 
-.PHONY:: test-distros test-requres test
+.PHONY:: test-blueprints test-requres test
 
-respkg-distros:
-	echo ubuntu-xenial
+respkg-blueprints:
+	echo ubuntu-noble-base
 
 respkg-requires:
-	echo respkg
+	echo respkg fakeroot
 
 respkg:
-	cd resources && respkg -b ../contractor-plugins-ipmi_$(VERSION).respkg       -n contractor-plugins-ipmi       -e $(VERSION) -c "Contractor Plugins - IPMI"       -t load_ipmi.sh       -d ipmi       -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-amt_$(VERSION).respkg        -n contractor-plugins-amt        -e $(VERSION) -c "Contractor Plugins - AMT"        -t load_amt.sh        -d amt        -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-docker_$(VERSION).respkg     -n contractor-plugins-docker     -e $(VERSION) -c "Contractor Plugins - Docker"     -t load_docker.sh     -d docker     -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-manual_$(VERSION).respkg     -n contractor-plugins-manual     -e $(VERSION) -c "Contractor Plugins - Manual"     -t load_manual.sh     -d manual     -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - VCenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-virtualbox_$(VERSION).respkg -n contractor-plugins-virtualbox -e $(VERSION) -c "Contractor Plugins - VirtualBox" -t load_virtualbox.sh -d virtualbox -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-azure_$(VERSION).respkg      -n contractor-plugins-azure      -e $(VERSION) -c "Contractor Plugins - Azure"      -t load_azure.sh      -d azure      -s contractor-os-base
-	cd resources && respkg -b ../contractor-plugins-iputils_$(VERSION).respkg    -n contractor-plugins-ipuils     -e $(VERSION) -c "Contractor Plugins - IpUtils"    -t load_iputils.sh    -d iputils
+	cd resources && fakeroot respkg -b ../contractor-plugins-test_$(VERSION).respkg       -n contractor-plugins-test       -e $(VERSION) -c "Contractor Plugins - Test"       -t load_test.sh       -d test       -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-ipmi_$(VERSION).respkg       -n contractor-plugins-ipmi       -e $(VERSION) -c "Contractor Plugins - IPMI"       -t load_ipmi.sh       -d ipmi       -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-redfish_$(VERSION).respkg    -n contractor-plugins-redfish    -e $(VERSION) -c "Contractor Plugins - RedFish"    -t load_redfish.sh    -d redfish    -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-amt_$(VERSION).respkg        -n contractor-plugins-amt        -e $(VERSION) -c "Contractor Plugins - AMT"        -t load_amt.sh        -d amt        -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-docker_$(VERSION).respkg     -n contractor-plugins-docker     -e $(VERSION) -c "Contractor Plugins - Docker"     -t load_docker.sh     -d docker     -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-manual_$(VERSION).respkg     -n contractor-plugins-manual     -e $(VERSION) -c "Contractor Plugins - Manual"     -t load_manual.sh     -d manual     -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-vcenter_$(VERSION).respkg    -n contractor-plugins-vcenter    -e $(VERSION) -c "Contractor Plugins - VCenter"    -t load_vcenter.sh    -d vcenter    -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-virtualbox_$(VERSION).respkg -n contractor-plugins-virtualbox -e $(VERSION) -c "Contractor Plugins - VirtualBox" -t load_virtualbox.sh -d virtualbox -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-libvirt_$(VERSION).respkg    -n contractor-plugins-libvirt    -e $(VERSION) -c "Contractor Plugins - LibVirt"    -t load_libvirt.sh    -d libvirt    -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-azure_$(VERSION).respkg      -n contractor-plugins-azure      -e $(VERSION) -c "Contractor Plugins - Azure"      -t load_azure.sh      -d azure      -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-aws_$(VERSION).respkg        -n contractor-plugins-aws        -e $(VERSION) -c "Contractor Plugins - AWS"        -t load_aws.sh        -d aws        -s contractor-os-base
+	cd resources && fakeroot respkg -b ../contractor-plugins-proxmox_$(VERSION).respkg    -n contractor-plugins-proxmox    -e $(VERSION) -c "Contractor Plugins - Proxmox"    -t load_proxmox.sh    -d proxmox    -s contractor-os-base
+
+	cd resources && fakeroot respkg -b ../contractor-plugins-iputils_$(VERSION).respkg    -n contractor-plugins-ipuils     -e $(VERSION) -c "Contractor Plugins - IpUtils"    -t load_iputils.sh    -d iputils
+
+	cd resources && fakeroot respkg -b ../contractor-plugins-vyos_$(VERSION).respkg       -n contractor-plugins-vyos       -e $(VERSION) -c "Contractor Plugins - VyoS"       -t load_vyos.sh       -d vyos       -s contractor-os-base
+
 	touch respkg
 
 respkg-file:
 	echo $(shell ls *.respkg)
 
-.PHONY:: respkg-distros respkg-requires respkg respkg-file
+.PHONY:: respkg-blueprints respkg-requires respkg respkg-file
 
-dpkg-distros:
-	echo ubuntu-xenial
+dpkg-blueprints:
+	echo ubuntu-noble-base
 
 dpkg-requires:
-	echo dpkg-dev debhelper python3-dev python3-setuptools
+	echo dpkg-dev debhelper python3-dev python3-setuptools dh-python
 
 dpkg:
 	dpkg-buildpackage -b -us -uc
 	touch dpkg
 
 dpkg-file:
-	echo $(shell ls ../contractor-plugins_*.deb):xenial
+	echo $(shell ls ../contractor-plugins_*.deb):noble
 
-.PHONY:: dpkg-distros dpkg-requires dpkg dpkg-file
+.PHONY:: dpkg-blueprints dpkg-requires dpkg dpkg-file

@@ -8,4 +8,4 @@ class Harddrive( models.Model ):
   created = models.DateTimeField( editable=False, auto_now_add=True )
 
   def __str__( self ):
-    return 'Harddrive {0}'.format( self.serial, self.model )
+    return 'Harddrive {0} {1}'.format( self.serial, self.model )

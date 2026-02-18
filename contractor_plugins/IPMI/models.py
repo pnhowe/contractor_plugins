@@ -19,11 +19,13 @@ RUNNER_MODULE_LIST.append( 'contractor_plugins.IPMI.module' )
 
 @cinp.model( property_list=( 'state', 'type', 'class_list' ) )
 class IPMIFoundation( Foundation ):  # , Networked ):
-  ipmi_username = models.CharField( max_length=16 )
-  ipmi_password = models.CharField( max_length=16 )
+  SOL_PORT_CHOICES = ( 'console', 'ttyS0', 'ttyS1', 'ttyS2', 'ttyS3' )
+  ipmi_username = models.CharField( max_length=50 )
+  ipmi_password = models.CharField( max_length=50 )
   # ipmi_interface = models.ForeignKey( RealNetworkInterface )
   ipmi_ip_address = models.CharField( max_length=30 )
-  plot = models.ForeignKey( Plot )
+  ipmi_sol_port = models.CharField( max_length=7, choices=[ ( i, i ) for i in SOL_PORT_CHOICES ], default='ttyS1' )
+  plot = models.ForeignKey( Plot, on_delete=models.PROTECT )
 
   @staticmethod
   def getTscriptValues( write_mode=False ):  # locator is handled seperatly
@@ -50,6 +52,10 @@ class IPMIFoundation( Foundation ):  # , Networked ):
     result[ 'ipmi_ip_address' ] = self.ipmi_ip_address
 
     return result
+
+  @property
+  def console( self ):
+    return self.ipmi_sol_port
 
   @property
   def subclass( self ):
@@ -87,14 +93,20 @@ class IPMIFoundation( Foundation ):  # , Networked ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
 
     if errors:
+      if self.port not in IPMIFoundation.SOL_PORT_CHOICES:
+        errors[ 'port' ] = 'Invalid'
+
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'IPMIFoundation {0}'.format( self.pk )

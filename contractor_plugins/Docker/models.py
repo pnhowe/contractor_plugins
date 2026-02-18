@@ -34,8 +34,8 @@ class DockerComplex( Complex ):
               'host': self.members.get().primary_address.ip_address
             }
 
-  def newFoundation( self, hostname ):
-    foundation = DockerFoundation( site=self.site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
+  def newFoundation( self, hostname, site ):
+    foundation = DockerFoundation( site=site, blueprint=FoundationBluePrint.objects.get( pk='docker-continaer-base' ), locator=hostname )
     foundation.docker_complex = self
     foundation.full_clean()
     foundation.save()
@@ -45,17 +45,20 @@ class DockerComplex( Complex ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
 
-    if self.pk and self.members.count() > 1:
+    if self.pk is not None and self.members.count() > 1:
       errors[ 'structure' ] = 'Docker Complex support only one structure'
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'DockerComplex {0}'.format( self.pk )
@@ -136,17 +139,25 @@ class DockerFoundation( Foundation ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, method, id_list, action=None ):
-    return True
+    return super( __class__, __class__ ).checkAuth( user, method, id_list, action )
 
   def clean( self, *args, **kwargs ):
     super().clean( *args, **kwargs )
     errors = {}
+
+    if self.pk is not None:
+      current = DockerFoundation.objects.get( pk=self.pk )
+      if ( self.docker_id is not None or current.docker_id is not None ) and current.docker_complex != self.docker_complex:
+        errors[ 'docker_complex' ] = 'can not move complexes without first destroying'
 
     if self.site.pk != self.docker_complex.site.pk:
       errors[ 'site' ] = 'Site must match the docker_complex\'s site'
 
     if errors:
       raise ValidationError( errors )
+
+  class Meta:
+    default_permissions = ()
 
   def __str__( self ):
     return 'DockerFoundation {0}'.format( self.pk )
@@ -173,7 +184,7 @@ class DockerPort( models.Model ):
   @cinp.check_auth()
   @staticmethod
   def checkAuth( user, verb, id_list, action=None ):
-    return True
+    return cinp.basic_auth_check( user, verb, action, DockerPort )
 
   def clean( self, *args, **kwargs ):  # TODO: do not allow port or address_offset to change, or find a way to make changes propagate
     super().clean( *args, **kwargs )
@@ -192,6 +203,7 @@ class DockerPort( models.Model ):
       raise ValidationError( errors )
 
   class Meta:
+    # default_permissions = ( 'add', 'change', 'delete', 'view' )
     unique_together = ( ( 'foundation', 'foundation_index' ), )
 
   def __str__( self ):
