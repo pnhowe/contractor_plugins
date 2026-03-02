@@ -1,3 +1,12 @@
+contractor-plugins (0.20.0-1) noble; urgency=medium
+
+  * Sync version with contractor
+  * added proxmox
+  * mis fixes to just about everything
+  * RedFish should be working now
+
+ -- Peter Howe <pnhowe@gmail.com>  Thu, 19 Feb 2026 07:50:16 -0700
+
 contractor-plugins (0.14.1-1) noble; urgency=medium
 
   * libvirt fixes
